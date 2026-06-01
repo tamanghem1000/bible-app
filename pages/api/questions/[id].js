@@ -1,32 +1,39 @@
-import fs from 'fs';
-import path from 'path';
+import { createClient } from '@supabase/supabase-js';
 
-const DATA_FILE = path.join(process.cwd(), 'public', 'data', 'questions.json');
+// Connect to your online Supabase instance using your environment keys
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
 
-function readQuestions() {
-  try { return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')); }
-  catch { return []; }
-}
-function writeQuestions(q) { fs.writeFileSync(DATA_FILE, JSON.stringify(q, null, 2)); }
+export default async function handler(req, res) {
+  const { id } = req.query; // Grabs the question ID from the URL pointer
 
-export default function handler(req, res) {
-  const { id } = req.query;
-  const questions = readQuestions();
+  // 1. PUT: Update an existing question inside Supabase
+  if (req.method === 'PUT') {
+    const { data, error } = await supabase
+      .from('questions')
+      .update(req.body)
+      .eq('id', id)
+      .select();
 
+    if (error) return res.status(500).json({ error: error.message });
+    if (!data || data.length === 0) return res.status(404).json({ error: 'Question not found' });
+    
+    return res.status(200).json(data[0]);
+  }
+
+  // 2. DELETE: Permanently remove a question from Supabase
   if (req.method === 'DELETE') {
-    const updated = questions.filter(q => q.id !== id);
-    if (updated.length === questions.length) return res.status(404).json({ error: 'Not found' });
-    writeQuestions(updated);
+    const { error } = await supabase
+      .from('questions')
+      .delete()
+      .eq('id', id);
+
+    if (error) return res.status(500).json({ error: error.message });
     return res.status(200).json({ success: true });
   }
 
-  if (req.method === 'PUT') {
-    const idx = questions.findIndex(q => q.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'Not found' });
-    questions[idx] = { ...questions[idx], ...req.body, id };
-    writeQuestions(questions);
-    return res.status(200).json(questions[idx]);
-  }
-
-  res.status(405).json({ error: 'Method not allowed' });
+  res.setHeader('Allow', ['PUT', 'DELETE']);
+  return res.status(405).json({ error: `Method ${req.method} Not Allowed` });
 }
