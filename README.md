@@ -6,7 +6,7 @@ A beautiful, responsive Bible reading and quiz application built with Next.js.
 
 - 📖 **Bible Browser** — Read all 66 books, searchable by book & chapter (KJV via bible-api.com)
 - 🧠 **Interactive Quiz** — Image-enhanced multiple-choice questions with scoring
-- ⚙️ **Admin Panel** — Add/edit/delete quiz questions with images, categories, difficulty
+<!-- - ⚙️ **Admin Panel** — Add/edit/delete quiz questions with images, categories, difficulty// -->
 - 📱 **Fully Responsive** — Works on mobile, tablet, and desktop
 
 ---

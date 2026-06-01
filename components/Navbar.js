@@ -10,7 +10,7 @@ export default function Navbar() {
     { href: '/', label: 'Home' },
     { href: '/bible', label: 'Bible' },
     { href: '/quiz', label: 'Quiz' },
-    { href: '/admin', label: 'Admin' },
+    // { href: '/admin', label: 'Admin' },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none' }}>
           <span style={{ fontFamily: 'Cinzel, serif', fontSize: '1.1rem', color: '#c9a84c', letterSpacing: '0.12em', fontWeight: 700 }}>
-            ✦ SACRED WORD
+            ✦ Hem Bible APP
           </span>
         </Link>
 
