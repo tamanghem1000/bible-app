@@ -1,0 +1,102 @@
+[
+  {
+    "id": "q1",
+    "question": "Who built the ark to survive the great flood?",
+    "image": "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=600&q=80",
+    "options": ["Abraham", "Moses", "Noah", "David"],
+    "answer": 2,
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "reference": "Genesis 6:14"
+  },
+  {
+    "id": "q2",
+    "question": "How many days did Jesus fast in the wilderness before being tempted by Satan?",
+    "image": "",
+    "options": ["7 days", "30 days", "40 days", "50 days"],
+    "answer": 2,
+    "category": "New Testament",
+    "difficulty": "medium",
+    "reference": "Matthew 4:2"
+  },
+  {
+    "id": "q3",
+    "question": "What was the first miracle Jesus performed according to the Gospel of John?",
+    "image": "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&q=80",
+    "options": ["Healing a blind man", "Turning water into wine", "Walking on water", "Feeding 5000 people"],
+    "answer": 1,
+    "category": "New Testament",
+    "difficulty": "medium",
+    "reference": "John 2:1-11"
+  },
+  {
+    "id": "q4",
+    "question": "Who was swallowed by a large fish after fleeing from God's command?",
+    "image": "",
+    "options": ["Elijah", "Isaiah", "Jonah", "Daniel"],
+    "answer": 2,
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "reference": "Jonah 1:17"
+  },
+  {
+    "id": "q5",
+    "question": "In which city was Jesus born?",
+    "image": "https://images.unsplash.com/photo-1544967082-d9d25d867d66?w=600&q=80",
+    "options": ["Jerusalem", "Nazareth", "Bethlehem", "Jericho"],
+    "answer": 2,
+    "category": "New Testament",
+    "difficulty": "easy",
+    "reference": "Luke 2:4-7"
+  },
+  {
+    "id": "q6",
+    "question": "How many apostles did Jesus choose?",
+    "image": "",
+    "options": ["7", "10", "12", "14"],
+    "answer": 2,
+    "category": "New Testament",
+    "difficulty": "easy",
+    "reference": "Luke 6:13"
+  },
+  {
+    "id": "q7",
+    "question": "Who wrote the most books in the New Testament?",
+    "image": "",
+    "options": ["Peter", "John", "Paul", "Luke"],
+    "answer": 2,
+    "category": "New Testament",
+    "difficulty": "hard",
+    "reference": "Romans - Philemon"
+  },
+  {
+    "id": "q8",
+    "question": "What is the shortest verse in the Bible?",
+    "image": "",
+    "options": ["God is love.", "Jesus wept.", "Pray always.", "Fear not."],
+    "answer": 1,
+    "category": "General",
+    "difficulty": "medium",
+    "reference": "John 11:35"
+  },
+  {
+    "id": "q9",
+    "question": "Which king of Israel was known for his great wisdom?",
+    "image": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&q=80",
+    "options": ["David", "Saul", "Solomon", "Hezekiah"],
+    "answer": 2,
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "reference": "1 Kings 3:12"
+  },
+  {
+    "id": "q10",
+    "question": "On which day did God rest after creation?",
+    "image": "",
+    "options": ["Fifth day", "Sixth day", "Seventh day", "He did not rest"],
+    "answer": 2,
+    "category": "Old Testament",
+    "difficulty": "easy",
+    "reference": "Genesis 2:2"
+  }
+]
