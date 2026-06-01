@@ -51,7 +51,7 @@ export default function AdminPage() {
   const handleLogin = (e) => {
     e.preventDefault();
     // CHANGE THIS STRING TO WHATEVER PASSWORD YOU WANT
-    if (passwordInput === 'SacredWordAdmin2026') {
+    if (passwordInput === 'Hem') {
       setIsAuthenticated(true);
       setLoginError('');
     } else {
