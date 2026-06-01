@@ -228,7 +228,7 @@ export default function BiblePage() {
                       <span style={{ 
                         fontSize: '1.05rem', 
                         lineHeight: '1.6', 
-                        color: '#f5f0e8', 
+                        color: '#c9a84c', 
                         fontFamily: 'Lora, Georgia, serif' 
                       }}>
                         {v.text_en}
@@ -237,7 +237,7 @@ export default function BiblePage() {
                       <span style={{ 
                         fontSize: '1.15rem', 
                         lineHeight: '1.7', 
-                        color: 'rgba(245,240,232,0.75)', 
+                        color: '#c9a84c', 
                         fontFamily: 'Mukta, Kalimati, sans-serif' 
                       }}>
                         {v.text_ne}
