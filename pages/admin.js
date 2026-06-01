@@ -13,6 +13,12 @@ const EMPTY_FORM = {
 };
 
 export default function AdminPage() {
+  // --- PASSWORD PROTECTION STATES ---
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState('');
+
+  // --- EXISTING DASHBOARD STATES ---
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -20,14 +26,19 @@ export default function AdminPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [preview, setPreview] = useState(null);
 
-  useEffect(() => { fetchQuestions(); }, []);
+  useEffect(() => { 
+    if (isAuthenticated) {
+      fetchQuestions(); 
+    }
+  }, [isAuthenticated]);
 
   async function fetchQuestions() {
     setLoading(true);
     const res = await fetch('/api/questions');
-    setQuestions(await res.json());
+    const data = await res.json();
+    // Fallback array check to handle database responses safely
+    setQuestions(Array.isArray(data) ? data : []);
     setLoading(false);
   }
 
@@ -36,6 +47,18 @@ export default function AdminPage() {
     setTimeout(() => setMsg(''), 3000);
   }
 
+  // --- PASSWORD SUBMIT HANDLER ---
+  const handleLogin = (e) => {
+    e.preventDefault();
+    // CHANGE THIS STRING TO WHATEVER PASSWORD YOU WANT
+    if (passwordInput === 'SacredWordAdmin2026') {
+      setIsAuthenticated(true);
+      setLoginError('');
+    } else {
+      setLoginError('Incorrect password. Access denied.');
+    }
+  };
+
   async function saveQuestion(e) {
     e.preventDefault();
     const filledOptions = form.options.filter(o => o.trim());
@@ -43,14 +66,27 @@ export default function AdminPage() {
       return flash('Question and at least 2 options are required.', 'error');
     }
     setSaving(true);
-    const payload = { ...form, options: form.options.filter(o => o.trim()), answer: Number(form.answer) };
+    
+    const payload = { 
+      ...form, 
+      options: form.options.filter(o => o.trim()), 
+      answer: Number(form.answer) 
+    };
 
     if (editing) {
-      await fetch(`/api/questions/${editing}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      await fetch(`/api/questions/${editing}`, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
       flash('Question updated!');
       setEditing(null);
     } else {
-      await fetch('/api/questions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      await fetch('/api/questions', { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify(payload) 
+      });
       flash('Question added!');
     }
     setForm(EMPTY_FORM);
@@ -67,7 +103,16 @@ export default function AdminPage() {
 
   function editQuestion(q) {
     setEditing(q.id);
-    setForm({ question: q.question, image: q.image || '', options: [...q.options, '', '', '', ''].slice(0, 4), answer: q.answer, category: q.category, difficulty: q.difficulty, reference: q.reference || '' });
+    // Maps Supabase column naming schemas safely directly back into form states
+    setForm({ 
+      question: q.question, 
+      image: q.image_url || q.image || '', 
+      options: [...(q.options || []), '', '', '', ''].slice(0, 4), 
+      answer: q.answer, 
+      category: q.category || 'General', 
+      difficulty: q.difficulty || 'medium', 
+      reference: q.scripture_reference || q.reference || '' 
+    });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -78,6 +123,34 @@ export default function AdminPage() {
   };
   const labelStyle = { display: 'block', fontSize: '0.75rem', color: 'rgba(201,168,76,0.7)', marginBottom: 6, fontFamily: 'Cinzel, serif', letterSpacing: '0.07em' };
 
+  // --- CONDITIONAL ACCESS GATE DISPLAY ---
+  if (!isAuthenticated) {
+    return (
+      <>
+        <Head>
+          <title>Admin Gateway — Sacred Word</title>
+        </Head>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d1b3e', color: '#f5f0e8', fontFamily: 'sans-serif' }}>
+          <form onSubmit={handleLogin} style={{ padding: '40px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)', width: '340px', textAlign: 'center' }}>
+            <h2 style={{ marginBottom: '24px', fontFamily: 'Cinzel, serif', color: '#c9a84c', letterSpacing: '0.05em' }}>Admin Gate</h2>
+            <input
+              type="password"
+              placeholder="Enter Access Key"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              style={{ width: '100%', padding: '12px', marginBottom: '18px', borderRadius: '4px', border: '1px solid rgba(201,168,76,0.3)', backgroundColor: '#12224c', color: '#fff', boxSizing: 'border-box', outline: 'none' }}
+            />
+            <button type="submit" style={{ width: '100%', padding: '12px', background: '#c9a84c', color: '#0d1b3e', border: 'none', borderRadius: '4px', fontFamily: 'Cinzel, serif', fontWeight: 'bold', letterSpacing: '0.05em', cursor: 'pointer', transition: 'background 0.2s' }}>
+              AUTHENTICATE
+            </button>
+            {loginError && <p style={{ color: '#e05252', marginTop: '18px', fontSize: '0.85rem', fontFamily: 'Lato, sans-serif' }}>{loginError}</p>}
+          </form>
+        </div>
+      </>
+    );
+  }
+
+  // --- AUTHORIZED ADMIN PANEL RENDERING ---
   return (
     <>
       <Head>
@@ -86,7 +159,6 @@ export default function AdminPage() {
       </Head>
       <Navbar />
 
-      {/* Toast */}
       {msg && (
         <div style={{
           position: 'fixed', top: 76, left: '50%', transform: 'translateX(-50%)', zIndex: 200,
@@ -98,7 +170,6 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Delete confirm modal */}
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
           <div className="card" style={{ maxWidth: 400, width: '100%', padding: 32, textAlign: 'center' }}>
@@ -120,11 +191,9 @@ export default function AdminPage() {
           </h1>
         </div>
 
-        {/* Form */}
         <form onSubmit={saveQuestion} style={{ marginBottom: 56 }}>
           <div className="card" style={{ padding: 28 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 20 }}>
-              {/* Question */}
               <div>
                 <label style={labelStyle}>QUESTION *</label>
                 <textarea
@@ -137,7 +206,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* Image URL */}
               <div>
                 <label style={labelStyle}>IMAGE URL (optional)</label>
                 <input
@@ -154,7 +222,6 @@ export default function AdminPage() {
                 )}
               </div>
 
-              {/* Options */}
               <div>
                 <label style={labelStyle}>ANSWER OPTIONS * (mark correct with radio)</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -186,7 +253,6 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Meta */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
                 <div>
                   <label style={labelStyle}>CATEGORY</label>
@@ -211,7 +277,6 @@ export default function AdminPage() {
               </div>
             </div>
 
-            {/* Actions */}
             <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
               <button type="submit" className="btn-gold" style={{ padding: '12px 32px', fontSize: '0.85rem' }} disabled={saving}>
                 {saving ? 'SAVING...' : editing ? 'UPDATE QUESTION' : 'ADD QUESTION'}
@@ -225,7 +290,6 @@ export default function AdminPage() {
           </div>
         </form>
 
-        {/* Question list */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
             <h2 style={{ fontFamily: 'Cinzel, serif', fontSize: '1rem', letterSpacing: '0.1em', color: '#c9a84c' }}>
@@ -233,7 +297,7 @@ export default function AdminPage() {
             </h2>
           </div>
 
-          {loading && <p className="loading-pulse" style={{ color: 'rgba(245,240,232,0.4)', textAlign: 'center', padding: '40px 0' }}>Loading...</p>}
+          ={loading && <p className="loading-pulse" style={{ color: 'rgba(245,240,232,0.4)', textAlign: 'center', padding: '40px 0' }}>Loading...</p>}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {questions.map((q, i) => (
@@ -246,7 +310,7 @@ export default function AdminPage() {
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.7rem', color: '#c9a84c', fontFamily: 'Cinzel, serif', background: 'rgba(201,168,76,0.1)', padding: '2px 8px', borderRadius: 10 }}>{q.category}</span>
                     <span style={{ fontSize: '0.7rem', color: 'rgba(245,240,232,0.4)', fontFamily: 'Cinzel, serif', background: 'rgba(255,255,255,0.06)', padding: '2px 8px', borderRadius: 10 }}>{q.difficulty}</span>
-                    {q.reference && <span style={{ fontSize: '0.7rem', color: 'rgba(245,240,232,0.3)' }}>{q.reference}</span>}
+                    {(q.scripture_reference || q.reference) && <span style={{ fontSize: '0.7rem', color: 'rgba(245,240,232,0.3)' }}>{q.scripture_reference || q.reference}</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
