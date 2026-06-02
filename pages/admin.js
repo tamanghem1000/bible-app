@@ -32,8 +32,20 @@ export default function AdminPage() {
     const payload = { ...form, answer: Number(form.answer), difficulty: Number(form.difficulty), chapter: Number(form.chapter) };
     const url = editingId ? `/api/questions/${editingId}` : '/api/questions';
     const method = editingId ? 'PUT' : 'POST';
-    await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    setForm(EMPTY_FORM); setEditingId(null); setSaving(false); fetchQuestions();
+    
+    const res = await fetch(url, { 
+      method, 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(payload) 
+    });
+
+    if (res.ok) {
+      alert("Question saved successfully!");
+      setForm(EMPTY_FORM); setEditingId(null); fetchQuestions();
+    } else {
+      alert("Error saving question");
+    }
+    setSaving(false);
   }
 
   if (!isAuthenticated) return (
@@ -52,10 +64,11 @@ export default function AdminPage() {
         <form onSubmit={saveQuestion} className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 space-y-6">
           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
           
+          <p className="text-sm text-slate-400 font-bold">Select the Correct Option:</p>
           <div className="grid grid-cols-2 gap-4">
             {form.options.map((opt, i) => (
-              <div key={i} className="flex items-center gap-2 bg-[#151515] p-2 rounded-lg border border-slate-800">
-                <input type="radio" checked={form.answer === i} onChange={() => setForm({...form, answer: i})} />
+              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${form.answer === i ? 'bg-yellow-600/20 border-yellow-600' : 'bg-[#151515] border-slate-800'}`}>
+                <input type="radio" name="correctAnswer" checked={form.answer === i} onChange={() => setForm({...form, answer: i})} className="cursor-pointer" />
                 <input className="w-full bg-transparent outline-none" placeholder={`Option ${i+1}`} value={opt} onChange={e => { let n = [...form.options]; n[i] = e.target.value; setForm({...form, options: n}); }} />
               </div>
             ))}
@@ -68,7 +81,7 @@ export default function AdminPage() {
               <option>General</option><option>Old Testament</option><option>New Testament</option>
             </select>
           </div>
-          <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{editingId ? 'UPDATE' : 'PUBLISH'}</button>
+          <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{saving ? 'SAVING...' : (editingId ? 'UPDATE' : 'PUBLISH')}</button>
         </form>
       </main>
     </div>
