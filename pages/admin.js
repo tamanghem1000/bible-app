@@ -100,14 +100,14 @@ export default function AdminPage() {
           <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: BOOKS[e.target.value][0]})}>
               {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
             </select>
             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
               {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
             </select>
-            <input type="number" className="bg-[#151515] p-3 rounded-xl border border-slate-800" placeholder="Difficulty (1-5)" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} />
+            <input type="number" className="bg-[#151515] p-3 rounded-xl border border-slate-800" placeholder="Difficulty" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -125,7 +125,7 @@ export default function AdminPage() {
           <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter questions..." value={filter} onChange={(e) => setFilter(e.target.value)} />
           {questions.filter(q => q.book.toLowerCase().includes(filter.toLowerCase())).map(q => (
             <div key={q.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
-              <p className="text-sm truncate mr-4">{q.question} <span className="text-slate-500">({q.book})</span></p>
+              <p className="text-sm truncate mr-4">{q.question}</p>
               <div className="flex gap-2">
                 <button onClick={() => { setEditingId(q.id); setForm(q); window.scrollTo(0,0); }} className="text-blue-400">Edit</button>
                 <button onClick={() => deleteQuestion(q.id)} className="text-red-500">Delete</button>
@@ -138,10 +138,7 @@ export default function AdminPage() {
           <h2 className="text-xl font-bold mb-6">Manage Leaderboard</h2>
           {scores.map(s => (
             <div key={s.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
-              <div>
-                <p className="font-bold">{s.name}</p>
-                <p className="text-xs text-slate-500">{s.score} PTS</p>
-              </div>
+              <div><p className="font-bold">{s.name}</p><p className="text-xs text-slate-500">{s.score} PTS</p></div>
               <button onClick={() => deleteScore(s.id)} className="text-red-500 text-sm">Delete</button>
             </div>
           ))}
