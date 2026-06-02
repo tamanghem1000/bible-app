@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Ensure this key is in your .env file
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export default async function handler(req, res) {
@@ -19,8 +19,6 @@ export default async function handler(req, res) {
 
   if (req.method === 'POST') {
     const { name, score, total } = req.body;
-    
-    // Server-side insert using Service Role Key
     const { error } = await supabase
       .from('leaderboard')
       .insert([{ name, score, total }]);
