@@ -11,6 +11,7 @@ export default function AdminPage() {
   const [questions, setQuestions] = useState([]);
   const [filter, setFilter] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState(null); // Tracks if we are editing
   const [saving, setSaving] = useState(false);
 
   useEffect(() => { fetchQuestions(); }, []);
@@ -21,23 +22,46 @@ export default function AdminPage() {
     setQuestions(Array.isArray(data) ? data : []);
   }
 
+  // --- NEW: Edit Setup ---
+  function editQuestion(q) {
+    setEditingId(q.id);
+    setForm({
+      question: q.question,
+      options: q.options,
+      answer: q.answer,
+      category: q.category,
+      difficulty: q.difficulty,
+      scripture_reference: q.scripture_reference,
+      book: q.book,
+      chapter: q.chapter
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function saveQuestion(e) {
     e.preventDefault();
     setSaving(true);
     const payload = { ...form, answer: Number(form.answer), chapter: Number(form.chapter) };
     
-    await fetch('/api/questions', { 
-      method: 'POST', 
+    // Use PUT if editingId exists, otherwise POST
+    const url = editingId ? `/api/questions/${editingId}` : '/api/questions';
+    const method = editingId ? 'PUT' : 'POST';
+    
+    await fetch(url, { 
+      method, 
       headers: { 'Content-Type': 'application/json' }, 
       body: JSON.stringify(payload) 
     });
 
-    setForm(EMPTY_FORM); setSaving(false); alert("Question Published!");
-    fetchQuestions(); // Refresh list
+    setForm(EMPTY_FORM); 
+    setEditingId(null); 
+    setSaving(false); 
+    alert(editingId ? "Updated!" : "Published!");
+    fetchQuestions();
   }
 
   async function deleteQuestion(id) {
-    if (!confirm('Delete this question?')) return;
+    if (!confirm('Delete this?')) return;
     await fetch(`/api/questions/${id}`, { method: 'DELETE' });
     fetchQuestions();
   }
@@ -47,11 +71,13 @@ export default function AdminPage() {
       <Navbar />
       <main className="max-w-5xl mx-auto p-6 md:p-12 space-y-12">
         
-        {/* PUBLISH SECTION */}
+        {/* PUBLISH / EDIT SECTION */}
         <section>
           <div className="mb-10 border-b border-slate-800 pb-6">
-            <h1 className="text-4xl font-extrabold text-white">Content <span className="text-yellow-500">Studio</span></h1>
-            <p className="text-slate-500 mt-2">Manage your quiz database with production-grade tools.</p>
+            <h1 className="text-4xl font-extrabold text-white">
+              {editingId ? 'Edit ' : 'Content '} 
+              <span className="text-yellow-500">{editingId ? 'Question' : 'Studio'}</span>
+            </h1>
           </div>
           
           <form onSubmit={saveQuestion} className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -85,7 +111,7 @@ export default function AdminPage() {
               </div>
 
               <button type="submit" className="w-full bg-yellow-600 text-black py-4 rounded-2xl font-black hover:bg-yellow-500 transition-transform active:scale-95 shadow-[0_0_20px_rgba(202,138,4,0.3)]">
-                {saving ? 'PUBLISHING...' : 'PUBLISH TO DATABASE'}
+                {saving ? 'SAVING...' : (editingId ? 'UPDATE QUESTION' : 'PUBLISH TO DATABASE')}
               </button>
             </div>
           </form>
@@ -97,9 +123,8 @@ export default function AdminPage() {
             <h2 className="text-2xl font-bold">Existing Questions</h2>
             <input 
               className="bg-[#151515] p-3 rounded-xl border border-slate-800 outline-none w-64 text-sm"
-              placeholder="Filter by Book name..."
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
+              placeholder="Filter by Book..."
+              value={filter} onChange={(e) => setFilter(e.target.value)}
             />
           </div>
 
@@ -110,12 +135,10 @@ export default function AdminPage() {
                   <p className="font-bold text-white text-sm">{q.question}</p>
                   <p className="text-[10px] text-slate-500 uppercase">{q.book} • Chapter {q.chapter}</p>
                 </div>
-                <button 
-                  onClick={() => deleteQuestion(q.id)}
-                  className="bg-red-900/20 text-red-500 px-4 py-2 rounded-lg text-xs hover:bg-red-600 hover:text-white transition"
-                >
-                  Delete
-                </button>
+                <div className="flex gap-2">
+                  <button onClick={() => editQuestion(q)} className="text-blue-400 text-xs px-3 py-1 hover:underline">Edit</button>
+                  <button onClick={() => deleteQuestion(q.id)} className="text-red-500 text-xs px-3 py-1 hover:underline">Delete</button>
+                </div>
               </div>
             ))}
           </div>
