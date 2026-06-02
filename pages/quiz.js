@@ -7,7 +7,9 @@ export default function QuizPage() {
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
+  const [answered, setAnswered] = useState(false);
   const [name, setName] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const books = {
     "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
@@ -15,20 +17,37 @@ export default function QuizPage() {
   };
 
   async function startQuiz() {
-    const bookParam = selection.category === 'General' ? '' : selection.book;
-    const res = await fetch(`/api/questions?book=${bookParam}&difficulty=${selection.level}`);
+    const bookParam = selection.category === 'General' ? 'General' : selection.book;
+    const res = await fetch(`/api/questions?book=${encodeURIComponent(bookParam)}&difficulty=${selection.level}`);
     const data = await res.json();
-    if (data.length === 0) return alert("No questions found!");
+    if (data.length === 0) return alert("No questions found for this selection!");
     setQuestions(data.sort(() => Math.random() - 0.5));
     setQuizState('playing');
   }
+
+  async function saveScore() {
+    if (!name.trim()) return alert("Please enter your name!");
+    setSaving(true);
+    await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, score, total: questions.length })
+    });
+    window.location.href = '/leaderboard';
+  }
+
+  const getResults = (percentage) => {
+    if (percentage >= 90) return { title: "Scripture Master", verse: "His lord said unto him, Well done, good and faithful servant. — Matthew 25:21" };
+    if (percentage >= 70) return { title: "Bible Scholar", verse: "Thy word is a lamp unto my feet, and a light unto my path. — Psalm 119:105" };
+    if (percentage >= 50) return { title: "Faithful Student", verse: "The entrance of thy words giveth light. — Psalm 119:130" };
+    return { title: "Seeker", verse: "Be of good courage, and he shall strengthen your heart. — Psalm 31:24" };
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
       <main className="max-w-2xl mx-auto p-6">
         
-        {/* CATEGORY SELECT */}
         {quizState === 'category' && (
           <div className="grid gap-4">
             <h1 className="text-2xl font-bold mb-4">Select Category</h1>
@@ -38,26 +57,57 @@ export default function QuizPage() {
           </div>
         )}
 
-        {/* BOOK SELECT */}
         {quizState === 'book' && (
-          <div className="grid grid-cols-2 gap-2 h-96 overflow-y-auto">
+          <div className="grid grid-cols-2 gap-2 h-96 overflow-y-auto p-2">
             {books[selection.category].map(b => (
-              <button key={b} onClick={() => { setSelection({...selection, book: b}); setQuizState('level'); }} className="p-3 bg-[#151515] border border-slate-800 rounded-lg text-xs">{b}</button>
+              <button key={b} onClick={() => { setSelection({...selection, book: b}); setQuizState('level'); }} className="p-3 bg-[#151515] border border-slate-800 rounded-lg text-xs hover:border-yellow-600">{b}</button>
             ))}
           </div>
         )}
 
-        {/* LEVEL SELECT */}
         {quizState === 'level' && (
           <div className="grid grid-cols-2 gap-4">
             {[...Array(10)].map((_, i) => (
-              <button key={i+1} onClick={() => { setSelection({...selection, level: i+1}); startQuiz(); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl">Level {i+1}</button>
+              <button key={i+1} onClick={() => { setSelection({...selection, level: i+1}); startQuiz(); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600">Level {i+1}</button>
             ))}
           </div>
         )}
 
-        {/* PLAYING/FINISHED SCREENS */}
-        {/* ... (Keep your existing playing and finished code here) ... */}
+        {quizState === 'playing' && questions[current] && (
+          <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
+            <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
+            <div className="grid gap-3">
+              {questions[current].options.map((opt, i) => (
+                <button key={i} disabled={answered} onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }} className="p-4 bg-[#151515] rounded-xl border border-slate-800 text-left hover:border-yellow-600">
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {answered && (
+              <button className="mt-6 w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); } else { setQuizState('finished'); } }}>
+                {current + 1 < questions.length ? 'Next Question' : 'Finish Quiz'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {quizState === 'finished' && (
+          <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
+            {(() => {
+              const percentage = Math.round((score / questions.length) * 100);
+              const res = getResults(percentage);
+              return (
+                <>
+                  <h2 className="text-4xl font-black text-yellow-500 mb-2">{res.title}</h2>
+                  <p className="text-2xl font-bold mb-4">{score} / {questions.length}</p>
+                  <p className="text-slate-500 mb-6 italic">"{res.verse}"</p>
+                  <input placeholder="Enter your name" className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" onChange={(e) => setName(e.target.value)} />
+                  <button onClick={saveScore} disabled={saving} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">{saving ? 'SAVING...' : 'SAVE SCORE'}</button>
+                </>
+              );
+            })()}
+          </div>
+        )}
       </main>
     </div>
   );
