@@ -7,11 +7,6 @@ const EMPTY_FORM = {
   book: 'Genesis', chapter: 1
 };
 
-const BOOKS = {
-  "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
-  "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"]
-};
-
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -71,20 +66,27 @@ export default function AdminPage() {
   async function deleteScore(id) {
     if (!confirm('Delete this user score?')) return;
     
-    // The header 'x-admin-token' must match your ADMIN_SECRET env variable
-    const res = await fetch('/api/admin/delete-leaderboard', {
-      method: 'DELETE',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-admin-token': 'Hem' 
-      },
-      body: JSON.stringify({ id })
-    });
-    
-    if (res.ok) {
-      fetchScores();
-    } else {
-      alert("Failed to delete score. Check permissions.");
+    try {
+      const res = await fetch('/api/delete-leaderboard', {
+        method: 'DELETE',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-token': 'Hem' 
+        },
+        body: JSON.stringify({ id })
+      });
+      
+      const result = await res.json();
+      
+      if (res.ok) {
+        alert("Score deleted successfully!");
+        fetchScores();
+      } else {
+        alert(`Error: ${result.error || 'Unauthorized'}`);
+      }
+    } catch (err) {
+      alert("Failed to connect to the server.");
+      console.error(err);
     }
   }
 
@@ -101,7 +103,6 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
       <main className="max-w-4xl mx-auto p-6 space-y-8">
-        {/* FORM */}
         <form onSubmit={saveQuestion} className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 space-y-6">
           <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
@@ -116,7 +117,6 @@ export default function AdminPage() {
           <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{saving ? 'SAVING...' : (editingId ? 'UPDATE' : 'PUBLISH')}</button>
         </form>
 
-        {/* QUESTIONS LIST */}
         <section className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
           <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter questions..." value={filter} onChange={(e) => setFilter(e.target.value)} />
           {questions.filter(q => q.book.toLowerCase().includes(filter.toLowerCase())).map(q => (
@@ -130,7 +130,6 @@ export default function AdminPage() {
           ))}
         </section>
 
-        {/* LEADERBOARD LIST */}
         <section className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
           <h2 className="text-xl font-bold mb-6">Manage Leaderboard</h2>
           {scores.map(s => (
