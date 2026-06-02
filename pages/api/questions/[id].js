@@ -1,55 +1,37 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 export default async function handler(req, res) {
   const { id } = req.query;
 
-  // 1. --- HANDLE UPDATE (PUT) ---
+  // --- HANDLE UPDATE (PUT) ---
   if (req.method === 'PUT') {
-    try {
-      const { question, image, options, answer, category, difficulty, reference, book, chapter } = req.body;
+    const { question, options, answer, category, difficulty, scripture_reference, book, chapter } = req.body;
 
-      const { data, error } = await supabase
-        .from('questions')
-        .update({
-          question,
-          image_url: image,
-          options,
-          answer: Number(answer),
-          category,
-          difficulty,
-          scripture_reference: reference,
-          book: book,             // Added
-          chapter: Number(chapter) // Added
-        })
-        .eq('id', id)
-        .select();
+    const { data, error } = await supabase
+      .from('questions')
+      .update({
+        question,
+        options,
+        answer: Number(answer),
+        category,
+        difficulty,
+        scripture_reference, // Must be included here
+        book,
+        chapter: Number(chapter)
+      })
+      .eq('id', id)
+      .select();
 
-      if (error) throw error;
-      return res.status(200).json(data[0]);
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    return error ? res.status(500).json({ error: error.message }) : res.status(200).json(data[0]);
   }
 
-  // 2. --- HANDLE DELETE (DELETE) ---
+  // --- HANDLE DELETE ---
   if (req.method === 'DELETE') {
-    try {
-      const { error } = await supabase
-        .from('questions')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      return res.status(200).json({ message: 'Question deleted successfully' });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
+    const { error } = await supabase.from('questions').delete().eq('id', id);
+    return error ? res.status(500).json({ error: error.message }) : res.status(200).json({ message: 'Success' });
   }
 
-  res.setHeader('Allow', ['PUT', 'DELETE']);
-  return res.status(405).json({ error: `Method ${req.method} not allowed` });
+  res.status(405).json({ error: 'Method not allowed' });
 }
