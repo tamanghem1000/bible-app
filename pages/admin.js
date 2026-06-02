@@ -124,10 +124,17 @@ export default function AdminPage() {
         </form>
 
         <section className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
-          <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter questions..." value={filter} onChange={(e) => setFilter(e.target.value)} />
-          {questions.filter(q => q.book.toLowerCase().includes(filter.toLowerCase())).map(q => (
+          <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter by Book, Category, or Level..." value={filter} onChange={(e) => setFilter(e.target.value)} />
+          {questions.filter(q => 
+            q.book.toLowerCase().includes(filter.toLowerCase()) || 
+            q.category.toLowerCase().includes(filter.toLowerCase()) ||
+            String(q.difficulty).includes(filter)
+          ).map(q => (
             <div key={q.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
-              <p className="text-sm truncate mr-4">{q.question}</p>
+              <div>
+                <p className="text-sm">{q.question}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest">{q.book} • {q.category} • LVL {q.difficulty}</p>
+              </div>
               <div className="flex gap-2">
                 <button onClick={() => { setEditingId(q.id); setForm(q); window.scrollTo(0,0); }} className="text-blue-400">Edit</button>
                 <button onClick={() => deleteQuestion(q.id)} className="text-red-500">Delete</button>
