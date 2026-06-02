@@ -5,19 +5,20 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 export default async function handler(req, res) {
   // --- FETCH QUESTIONS ---
   if (req.method === 'GET') {
-    const { category, difficulty, book, chapter } = req.query;
+    const { difficulty, book } = req.query; 
     
-    // If fetching unique books for dropdown
-    if (req.query.fetch_books) {
-      const { data } = await supabase.from('questions').select('book');
-      return res.status(200).json([...new Set(data.map(q => q.book))]);
+    // Start base query
+    let query = supabase.from('questions').select('*');
+
+    // 1. Filter by Book if it's not "General"
+    if (book && book !== 'General') {
+      query = query.eq('book', book);
     }
 
-    let query = supabase.from('questions').select('*').order('created_at', { ascending: false });
-    if (category && category !== 'All') query = query.eq('category', category);
-    if (difficulty && difficulty !== 'All') query = query.eq('difficulty', difficulty);
-    if (book) query = query.eq('book', book);
-    if (chapter) query = query.eq('chapter', Number(chapter));
+    // 2. Filter by Difficulty (Level 1, 2, or 3)
+    if (difficulty) {
+      query = query.eq('difficulty', Number(difficulty));
+    }
 
     const { data, error } = await query;
     return error ? res.status(500).json({ error: error.message }) : res.status(200).json(data);
@@ -32,10 +33,10 @@ export default async function handler(req, res) {
       options, 
       answer: Number(answer), 
       category, 
-      difficulty, 
-      scripture_reference, // New
-      book,                // New
-      chapter: Number(chapter) // New
+      difficulty: Number(difficulty), 
+      scripture_reference, 
+      book, 
+      chapter: Number(chapter) 
     }]).select();
 
     return error ? res.status(500).json({ error: error.message }) : res.status(201).json(data[0]);
