@@ -1,21 +1,19 @@
 import { useState } from 'react';
-import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState([]);
-  const [quizState, setQuizState] = useState('setup');
+  const [selectedBook, setSelectedBook] = useState('Genesis');
+  const [quizState, setQuizState] = useState('setup'); // setup, playing, finished
   const [current, setCurrent] = useState(0);
-  const [answered, setAnswered] = useState(false);
-  const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
+  const [answered, setAnswered] = useState(false);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const q = questions[current];
-
-  async function fetchQuestions() {
-    const res = await fetch('/api/questions');
+  async function startQuiz() {
+    const res = await fetch(`/api/questions?book=${selectedBook}`);
     const data = await res.json();
+    if (data.length === 0) return alert("No questions found for this book!");
     setQuestions(data.sort(() => Math.random() - 0.5));
     setQuizState('playing');
   }
@@ -30,57 +28,92 @@ export default function QuizPage() {
     alert("Score Saved!");
     setQuizState('setup');
     setSaving(false);
+    setScore(0);
+    setCurrent(0);
   }
 
   return (
-    <>
-      <Navbar />
-      <main style={{ maxWidth: 600, margin: '0 auto', padding: 40, color: '#fff' }}>
-        
-        {/* SETUP SCREEN */}
-        {quizState === 'setup' && (
-          <button onClick={fetchQuestions} style={{width: '100%', padding: 20}}>START QUIZ</button>
-        )}
+    <div className="min-h-screen bg-slate-950 text-white p-6 flex flex-col items-center">
+      
+      {/* SETUP SCREEN */}
+      {quizState === 'setup' && (
+        <div className="w-full max-w-md bg-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-800">
+          <h1 className="text-4xl font-bold mb-6 text-yellow-500">Bible Quiz</h1>
+          <label className="block mb-2 text-sm text-gray-400">Select Book</label>
+          <select 
+            className="w-full p-4 bg-slate-800 rounded-xl mb-6 border border-slate-700 focus:ring-2 focus:ring-yellow-500 outline-none"
+            value={selectedBook}
+            onChange={(e) => setSelectedBook(e.target.value)}
+          >
+            <option value="Genesis">Genesis</option>
+            <option value="Exodus">Exodus</option>
+            <option value="Matthew">Matthew</option>
+            <option value="John">John</option>
+          </select>
+          <button onClick={startQuiz} className="w-full bg-yellow-600 hover:bg-yellow-500 p-4 rounded-xl font-bold transition transform hover:scale-[1.02]">
+            START QUIZ
+          </button>
+        </div>
+      )}
 
-        {/* PLAYING SCREEN */}
-        {quizState === 'playing' && q && (
-          <div>
-            <div style={{ color: '#c9a84c', fontSize: '0.8rem' }}>
-              {q.category} | {q.difficulty?.toUpperCase()} | {q.book} {q.chapter}
-            </div>
-            <h2>{q.question}</h2>
-            {q.options.map((opt, i) => (
-              <button key={i} onClick={() => { setSelected(i); setAnswered(true); if(i === q.answer) setScore(s => s + 1); }}
+      {/* PLAYING SCREEN */}
+      {quizState === 'playing' && questions[current] && (
+        <div className="w-full max-w-2xl bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl">
+          <div className="flex justify-between text-yellow-500 text-xs font-bold uppercase mb-4">
+            <span>{questions[current].book} {questions[current].chapter}</span>
+            <span>Question {current + 1} / {questions.length}</span>
+          </div>
+          <h2 className="text-2xl font-medium mb-8">{questions[current].question}</h2>
+          
+          <div className="grid gap-3">
+            {questions[current].options.map((opt, i) => (
+              <button 
+                key={i} 
+                onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }}
                 disabled={answered}
-                style={{ display: 'block', width: '100%', padding: 15, margin: '10px 0', 
-                background: answered ? (i === q.answer ? '#4caf7d' : (i === selected ? '#e05252' : '#333')) : '#333' }}>
+                className={`p-4 rounded-xl text-left border transition-all ${
+                  answered ? (i === questions[current].answer ? 'bg-green-800 border-green-600' : 'bg-slate-800 border-slate-700 opacity-50') 
+                           : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-yellow-600'
+                }`}
+              >
                 {opt}
               </button>
             ))}
-
-            {answered && (
-              <div style={{ marginTop: 20, background: '#222', padding: 10 }}>
-                <p><strong>Reference:</strong> {q.scripture_reference || 'Not provided'}</p>
-                <button onClick={() => current + 1 < questions.length ? (setCurrent(current + 1), setAnswered(false), setSelected(null)) : setQuizState('results')}>
-                  {current + 1 < questions.length ? 'NEXT QUESTION' : 'SEE RESULTS'}
-                </button>
-              </div>
-            )}
           </div>
-        )}
 
-        {/* RESULTS SCREEN */}
-        {quizState === 'results' && (
-          <div style={{ textAlign: 'center' }}>
-            <h1>Quiz Complete!</h1>
-            <h2>You scored {score} out of {questions.length}</h2>
-            <input placeholder="Enter your name for leaderboard" onChange={e => setName(e.target.value)} style={{padding: 10, width: '100%', marginBottom: 10}} />
-            <button onClick={saveScore} disabled={saving} style={{width: '100%', padding: 15}}>
-              {saving ? 'SAVING...' : 'SAVE SCORE & RESTART'}
-            </button>
-          </div>
-        )}
-      </main>
-    </>
+          {answered && (
+            <div className="mt-8 p-6 bg-slate-950 rounded-2xl border-l-4 border-yellow-500">
+              <p className="text-sm text-slate-400 mb-4">Reference: <span className="text-yellow-500 font-bold">{questions[current].scripture_reference}</span></p>
+              <button 
+                onClick={() => current + 1 < questions.length ? (setCurrent(c => c + 1), setAnswered(false)) : setQuizState('finished')}
+                className="w-full bg-white text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition"
+              >
+                {current + 1 < questions.length ? 'NEXT QUESTION' : 'SEE RESULTS'}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FINISHED SCREEN */}
+      {quizState === 'finished' && (
+        <div className="w-full max-w-md bg-slate-900 p-8 rounded-3xl text-center border border-slate-800 shadow-2xl">
+          <h2 className="text-3xl font-bold mb-4">Quiz Complete!</h2>
+          <p className="text-xl mb-6 text-yellow-500">You scored {score} / {questions.length}</p>
+          <input 
+            placeholder="Enter your name" 
+            className="w-full p-4 bg-slate-800 rounded-xl mb-4 border border-slate-700 text-white"
+            onChange={(e) => setName(e.target.value)}
+          />
+          <button 
+            onClick={saveScore} 
+            disabled={saving || !name}
+            className="w-full bg-yellow-600 p-4 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-50"
+          >
+            {saving ? 'SAVING...' : 'SAVE SCORE & RESTART'}
+          </button>
+        </div>
+      )}
+    </div>
   );
 }

@@ -26,7 +26,6 @@ export default function AdminPage() {
     e.preventDefault();
     setSaving(true);
     
-    // Clean payload to match database exactly
     const payload = { 
       ...form, 
       answer: Number(form.answer),
@@ -46,46 +45,72 @@ export default function AdminPage() {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-slate-950 text-slate-100">
       <Navbar />
-      <main style={{ maxWidth: 800, margin: '20px auto', padding: 20, backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-        <h1>{editing ? 'Edit' : 'Add'} Question</h1>
-        <form onSubmit={saveQuestion} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+      <main className="max-w-3xl mx-auto p-6 md:p-12">
+        <h1 className="text-3xl font-bold mb-8 text-yellow-500">
+          {editing ? 'Edit Question' : 'Add New Question'}
+        </h1>
+        
+        <form onSubmit={saveQuestion} className="bg-slate-900 p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-6">
           
-          <label>Question</label>
-          <textarea value={form.question} onChange={e => setForm({...form, question: e.target.value})} required style={{width: '100%', padding: '8px'}} />
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-2">Question</label>
+            <textarea 
+              className="w-full p-4 bg-slate-950 border border-slate-700 rounded-xl focus:ring-2 focus:ring-yellow-500 text-white"
+              value={form.question} onChange={e => setForm({...form, question: e.target.value})} required rows="3" 
+            />
+          </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-            <input value={form.book} onChange={e => setForm({...form, book: e.target.value})} placeholder="Book (e.g. Genesis)" />
-            <input type="number" value={form.chapter} onChange={e => setForm({...form, chapter: e.target.value})} placeholder="Chapter" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Book</label>
+              <input className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" 
+                value={form.book} onChange={e => setForm({...form, book: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Chapter</label>
+              <input type="number" className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" 
+                value={form.chapter} onChange={e => setForm({...form, chapter: e.target.value})} />
+            </div>
           </div>
 
-          <label>Options (4)</label>
-          {form.options.map((opt, i) => (
-            <input key={i} value={opt} onChange={e => {
-              const newOpts = [...form.options];
-              newOpts[i] = e.target.value;
-              setForm({...form, options: newOpts});
-            }} placeholder={`Option ${i + 1}`} />
-          ))}
+          <div>
+            <label className="block text-sm font-medium text-slate-400 mb-2">Options (Enter 4)</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {form.options.map((opt, i) => (
+                <input key={i} className="p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" 
+                  placeholder={`Option ${i + 1}`} value={opt} onChange={e => {
+                    const newOpts = [...form.options];
+                    newOpts[i] = e.target.value;
+                    setForm({...form, options: newOpts});
+                  }} />
+              ))}
+            </div>
+          </div>
 
-          <label>Correct Answer Index (0-3)</label>
-          <input type="number" value={form.answer} onChange={e => setForm({...form, answer: e.target.value})} />
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Correct Answer (Index 0-3)</label>
+              <input type="number" className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" 
+                value={form.answer} onChange={e => setForm({...form, answer: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-400 mb-2">Difficulty</label>
+              <select className="w-full p-3 bg-slate-950 border border-slate-700 rounded-xl text-white" 
+                value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
 
-          <label>Scripture Reference</label>
-          <input value={form.scripture_reference} onChange={e => setForm({...form, scripture_reference: e.target.value})} placeholder="e.g. John 3:16" />
-
-          <select value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-
-          <button type="submit" style={{ padding: '10px', background: 'blue', color: 'white' }}>
+          <button type="submit" className="w-full py-4 bg-yellow-600 hover:bg-yellow-500 text-slate-950 font-bold rounded-xl transition-all shadow-lg hover:shadow-yellow-900/50">
             {saving ? 'SAVING...' : 'SAVE QUESTION'}
           </button>
         </form>
       </main>
-    </>
+    </div>
   );
 }
