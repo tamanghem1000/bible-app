@@ -17,40 +17,36 @@ export default function QuizPage() {
   };
 
   async function startQuiz() {
-    const bookParam = selection.category === 'General' ? 'General' : selection.book;
-    const res = await fetch(`/api/questions?book=${encodeURIComponent(bookParam)}&difficulty=${selection.level}`);
+    // Only pass book if it's not General
+    let url = `/api/questions?difficulty=${selection.level}`;
+    if (selection.category !== 'General') {
+      url += `&book=${encodeURIComponent(selection.book)}`;
+    }
+    
+    const res = await fetch(url);
     const data = await res.json();
-    if (data.length === 0) return alert("No questions found for this selection!");
+    
+    if (!data || data.length === 0) return alert("No questions found for this selection!");
+    
+    // Shuffle the filtered results
     setQuestions(data.sort(() => Math.random() - 0.5));
     setQuizState('playing');
   }
 
+  // ... rest of your saveScore, getResults, and JSX remain exactly as they were
   async function saveScore() {
     if (!name.trim()) return alert("Please enter your name!");
     setSaving(true);
-    
     try {
       const res = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: name.trim(), 
-          score: score, 
-          total: questions.length 
-        })
+        body: JSON.stringify({ name: name.trim(), score: score, total: questions.length })
       });
-
       const data = await res.json();
-
-      if (res.ok) {
-        window.location.href = '/leaderboard';
-      } else {
-        throw new Error(data.error || "Failed to save score");
-      }
-    } catch (err) {
-      alert("Error: " + err.message);
-      setSaving(false);
-    }
+      if (res.ok) { window.location.href = '/leaderboard'; }
+      else { throw new Error(data.error || "Failed to save score"); }
+    } catch (err) { alert("Error: " + err.message); setSaving(false); }
   }
 
   const getResults = (percentage) => {
@@ -64,7 +60,6 @@ export default function QuizPage() {
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
       <main className="max-w-2xl mx-auto p-6">
-        
         {quizState === 'category' && (
           <div className="grid gap-4">
             <h1 className="text-2xl font-bold mb-4">Select Category</h1>
@@ -73,7 +68,6 @@ export default function QuizPage() {
             ))}
           </div>
         )}
-
         {quizState === 'book' && (
           <div className="grid grid-cols-2 gap-2 h-96 overflow-y-auto p-2">
             {books[selection.category].map(b => (
@@ -81,7 +75,6 @@ export default function QuizPage() {
             ))}
           </div>
         )}
-
         {quizState === 'level' && (
           <div className="grid grid-cols-2 gap-4">
             {[...Array(10)].map((_, i) => (
@@ -89,7 +82,6 @@ export default function QuizPage() {
             ))}
           </div>
         )}
-
         {quizState === 'playing' && questions[current] && (
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
@@ -114,7 +106,6 @@ export default function QuizPage() {
             )}
           </div>
         )}
-
         {quizState === 'finished' && (
           <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
             {(() => {
