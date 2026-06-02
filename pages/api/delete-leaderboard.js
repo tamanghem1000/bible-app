@@ -6,10 +6,15 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
+  // CORS headers
+  res.setHeader('Access-Control-Allow-Methods', 'DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, x-admin-token');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'DELETE') return res.status(405).end();
 
-  // CHECK: Does the request have the secret token?
   const secret = req.headers['x-admin-token'];
+  
   if (secret !== process.env.ADMIN_SECRET) {
     return res.status(403).json({ error: "Unauthorized" });
   }
