@@ -2,11 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY // Ensure this key is in your .env
+  process.env.SUPABASE_SERVICE_ROLE_KEY // Ensure this key is in your .env file
 );
 
 export default async function handler(req, res) {
-  // GET: Fetch scores for leaderboard.js
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('leaderboard')
@@ -18,10 +17,11 @@ export default async function handler(req, res) {
     return res.status(200).json(data);
   }
 
-  // POST: Save score from quiz.js
   if (req.method === 'POST') {
     const { name, score, total } = req.body;
-    const { data, error } = await supabase
+    
+    // Server-side insert using Service Role Key
+    const { error } = await supabase
       .from('leaderboard')
       .insert([{ name, score, total }]);
 
