@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
-  const [quizState, setQuizState] = useState('category'); // category, book, level, playing, finished
+  const [quizState, setQuizState] = useState('category'); 
   const [selection, setSelection] = useState({ category: '', book: '', level: '' });
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -28,18 +28,23 @@ export default function QuizPage() {
   async function saveScore() {
     if (!name.trim()) return alert("Please enter your name!");
     setSaving(true);
-    await fetch('/api/leaderboard', {
+    const res = await fetch('/api/leaderboard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, score, total: questions.length })
     });
-    window.location.href = '/leaderboard';
+    if (res.ok) {
+      window.location.href = '/leaderboard';
+    } else {
+      alert("Failed to save score. Please try again.");
+      setSaving(false);
+    }
   }
 
   const getResults = (percentage) => {
     if (percentage >= 90) return { title: "Scripture Master", verse: "His lord said unto him, Well done, good and faithful servant. — Matthew 25:21" };
     if (percentage >= 70) return { title: "Bible Scholar", verse: "Thy word is a lamp unto my feet, and a light unto my path. — Psalm 119:105" };
-    if (percentage >= 50) return { title: "Faithful Student", verse: "The entrance of thy words giveth light. — Psalm 119:130" };
+    if (percentage >= 50) return { title: "Rabbit", verse: "The righteous are as bold as a lion, but the wicked flee when no one pursues. — Proverbs 28:1" };
     return { title: "Seeker", verse: "Be of good courage, and he shall strengthen your heart. — Psalm 31:24" };
   };
 
@@ -77,11 +82,18 @@ export default function QuizPage() {
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
             <div className="grid gap-3">
-              {questions[current].options.map((opt, i) => (
-                <button key={i} disabled={answered} onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }} className="p-4 bg-[#151515] rounded-xl border border-slate-800 text-left hover:border-yellow-600">
-                  {opt}
-                </button>
-              ))}
+              {questions[current].options.map((opt, i) => {
+                let btnStyle = "bg-[#151515] border-slate-800";
+                if (answered) {
+                  if (i === questions[current].answer) btnStyle = "bg-green-600/20 border-green-500";
+                  else btnStyle = "bg-red-600/20 border-red-500 opacity-50";
+                }
+                return (
+                  <button key={i} disabled={answered} onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }} className={`p-4 rounded-xl border text-left ${btnStyle}`}>
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
             {answered && (
               <button className="mt-6 w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); } else { setQuizState('finished'); } }}>
