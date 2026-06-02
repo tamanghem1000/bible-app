@@ -100,7 +100,6 @@ export default function AdminPage() {
           <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
           
-          {/* CATEGORY, BOOK, AND LEVEL FIELDS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: BOOKS[e.target.value][0]})}>
               {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
@@ -108,7 +107,9 @@ export default function AdminPage() {
             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
               {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
             </select>
-            <input type="number" min="1" max="5" className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" placeholder="Level (1-5)" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} />
+            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
+              {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>Level {i+1}</option>)}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
