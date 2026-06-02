@@ -10,8 +10,8 @@ const EMPTY_FORM = {
   category: 'General',
   difficulty: 'medium',
   reference: '',
-  book: 'Genesis', // Added
-  chapter: 1       // Added
+  book: 'Genesis',
+  chapter: 1
 };
 
 export default function AdminPage() {
@@ -27,9 +27,7 @@ export default function AdminPage() {
   const [msg, setMsg] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  useEffect(() => { 
-    if (isAuthenticated) fetchQuestions(); 
-  }, [isAuthenticated]);
+  useEffect(() => { if (isAuthenticated) fetchQuestions(); }, [isAuthenticated]);
 
   async function fetchQuestions() {
     setLoading(true);
@@ -50,42 +48,32 @@ export default function AdminPage() {
       setIsAuthenticated(true);
       setLoginError('');
     } else {
-      setLoginError('Incorrect password. Access denied.');
+      setLoginError('Incorrect password.');
     }
   };
 
   async function saveQuestion(e) {
     e.preventDefault();
-    const filledOptions = form.options.filter(o => o.trim());
-    if (!form.question.trim() || filledOptions.length < 2) {
-      return flash('Question and at least 2 options are required.', 'error');
-    }
     setSaving(true);
-    
     const payload = { 
       ...form, 
       options: form.options.filter(o => o.trim()), 
       answer: Number(form.answer),
-      chapter: Number(form.chapter) // Ensure number
+      chapter: Number(form.chapter) 
     };
 
-    if (editing) {
-      await fetch(`/api/questions/${editing}`, { 
-        method: 'PUT', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-      });
-      flash('Question updated!');
-      setEditing(null);
-    } else {
-      await fetch('/api/questions', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
-      });
-      flash('Question added!');
-    }
+    const url = editing ? `/api/questions/${editing}` : '/api/questions';
+    const method = editing ? 'PUT' : 'POST';
+    
+    await fetch(url, { 
+      method, 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(payload) 
+    });
+
+    flash(editing ? 'Question updated!' : 'Question added!');
     setForm(EMPTY_FORM);
+    setEditing(null);
     setSaving(false);
     fetchQuestions();
   }
@@ -101,29 +89,28 @@ export default function AdminPage() {
     setEditing(q.id);
     setForm({ 
       question: q.question, 
-      image: q.image_url || q.image || '', 
+      image: q.image_url || '', 
       options: [...(q.options || []), '', '', '', ''].slice(0, 4), 
       answer: q.answer, 
       category: q.category || 'General', 
       difficulty: q.difficulty || 'medium', 
-      reference: q.scripture_reference || q.reference || '',
+      reference: q.scripture_reference || '',
       book: q.book || 'Genesis',
       chapter: q.chapter || 1
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  const inputStyle = { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(201,168,76,0.25)', color: '#f5f0e8', borderRadius: 4, fontSize: '0.9rem', outline: 'none', fontFamily: 'Lato, sans-serif' };
-  const labelStyle = { display: 'block', fontSize: '0.75rem', color: 'rgba(201,168,76,0.7)', marginBottom: 6, fontFamily: 'Cinzel, serif', letterSpacing: '0.07em' };
+  const inputStyle = { width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(201,168,76,0.25)', color: '#f5f0e8', borderRadius: 4, outline: 'none' };
+  const labelStyle = { display: 'block', fontSize: '0.75rem', color: '#c9a84c', marginBottom: 6, textTransform: 'uppercase' };
 
   if (!isAuthenticated) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#0d1b3e' }}>
-        <form onSubmit={handleLogin} style={{ padding: '40px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: '8px', width: '340px', textAlign: 'center' }}>
-          <h2 style={{ color: '#c9a84c', fontFamily: 'Cinzel, serif' }}>Admin Gate</h2>
-          <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} style={{ width: '100%', padding: '12px', marginBottom: '18px', backgroundColor: '#12224c', color: '#fff' }} />
-          <button type="submit" style={{ width: '100%', padding: '12px', background: '#c9a84c', border: 'none', cursor: 'pointer' }}>AUTHENTICATE</button>
-          {loginError && <p style={{ color: '#e05252', marginTop: '18px' }}>{loginError}</p>}
+        <form onSubmit={handleLogin} style={{ padding: 40, background: 'rgba(255,255,255,0.03)', border: '1px solid #c9a84c', borderRadius: 8, width: 340 }}>
+          <input type="password" value={passwordInput} onChange={e => setPasswordInput(e.target.value)} style={inputStyle} placeholder="Password" />
+          <button type="submit" style={{ width: '100%', padding: 12, background: '#c9a84c', border: 'none', cursor: 'pointer' }}>LOGIN</button>
+          {loginError && <p style={{ color: '#e05252' }}>{loginError}</p>}
         </form>
       </div>
     );
@@ -132,32 +119,57 @@ export default function AdminPage() {
   return (
     <>
       <Navbar />
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '40px 20px' }}>
-        <h1>{editing ? 'Edit Question' : 'Add New Question'}</h1>
-        
+      <main style={{ maxWidth: 800, margin: '20px auto', padding: 20 }}>
+        <h1>{editing ? 'Edit' : 'Add'} Question</h1>
         <form onSubmit={saveQuestion}>
-          <div className="card" style={{ padding: 28 }}>
-            {/* ... Existing inputs for Question, Image, Options ... */}
-            <textarea value={form.question} onChange={e => setForm(f => ({ ...f, question: e.target.value }))} placeholder="Enter question..." style={inputStyle} required />
-            
-            {/* NEW FIELDS ADDED HERE */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginTop: 16 }}>
-              <div>
-                <label style={labelStyle}>BOOK</label>
-                <input type="text" value={form.book} onChange={e => setForm(f => ({...f, book: e.target.value}))} style={inputStyle} />
-              </div>
-              <div>
-                <label style={labelStyle}>CHAPTER</label>
-                <input type="number" value={form.chapter} onChange={e => setForm(f => ({...f, chapter: parseInt(e.target.value) || 1}))} style={inputStyle} />
-              </div>
+          <label style={labelStyle}>Question</label>
+          <textarea value={form.question} onChange={e => setForm({...form, question: e.target.value})} style={inputStyle} rows={3} required />
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, margin: '16px 0' }}>
+            <div>
+              <label style={labelStyle}>Book</label>
+              <input value={form.book} onChange={e => setForm({...form, book: e.target.value})} style={inputStyle} />
             </div>
-
-            {/* ... Rest of your category/difficulty selects and buttons ... */}
-            <button type="submit" className="btn-gold" disabled={saving}>
-              {saving ? 'SAVING...' : editing ? 'UPDATE QUESTION' : 'ADD QUESTION'}
-            </button>
+            <div>
+              <label style={labelStyle}>Chapter</label>
+              <input type="number" value={form.chapter} onChange={e => setForm({...form, chapter: e.target.value})} style={inputStyle} />
+            </div>
           </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+            <select value={form.category} onChange={e => setForm({...form, category: e.target.value})} style={inputStyle}>
+              {['Old Testament', 'New Testament', 'General'].map(c => <option key={c} value={c} style={{color: '#000'}}>{c}</option>)}
+            </select>
+            <select value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} style={inputStyle}>
+              {['easy', 'medium', 'hard'].map(d => <option key={d} value={d} style={{color: '#000'}}>{d}</option>)}
+            </select>
+          </div>
+
+          <label style={labelStyle}>Options</label>
+          {form.options.map((opt, i) => (
+            <div key={i} style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+              <input type="radio" checked={form.answer === i} onChange={() => setForm({...form, answer: i})} />
+              <input value={opt} onChange={e => {
+                const o = [...form.options]; o[i] = e.target.value;
+                setForm({...form, options: o});
+              }} style={inputStyle} placeholder={`Option ${i+1}`} />
+            </div>
+          ))}
+
+          <button type="submit" disabled={saving} style={{ width: '100%', padding: 15, background: '#c9a84c', border: 'none', marginTop: 10 }}>
+            {saving ? 'SAVING...' : editing ? 'UPDATE' : 'ADD'}
+          </button>
         </form>
+
+        {loading ? <p>Loading...</p> : (
+          questions.map(q => (
+            <div key={q.id} style={{ border: '1px solid #444', padding: 15, marginTop: 15 }}>
+              <p>{q.question} ({q.book} {q.chapter})</p>
+              <button onClick={() => editQuestion(q)}>Edit</button>
+              <button onClick={() => setDeleteConfirm(q.id)}>Delete</button>
+            </div>
+          ))
+        )}
       </main>
     </>
   );
