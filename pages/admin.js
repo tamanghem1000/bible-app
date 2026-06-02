@@ -7,6 +7,11 @@ const EMPTY_FORM = {
   book: 'Genesis', chapter: 1
 };
 
+const BOOKS = {
+  "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
+  "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"]
+};
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
@@ -74,13 +79,24 @@ export default function AdminPage() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            <input placeholder="Book" className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.book} onChange={e => setForm({...form, book: e.target.value})} />
-            <input type="number" placeholder="Level (1-10)" className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} />
-            <select className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
-              <option>General</option><option>Old Testament</option><option>New Testament</option>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: e.target.value === 'General' ? 'General' : BOOKS[e.target.value][0]})}>
+              <option>General</option>
+              <option>Old Testament</option>
+              <option>New Testament</option>
+            </select>
+            
+            {form.category !== 'General' && (
+              <select className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
+                {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
+              </select>
+            )}
+
+            <select className="bg-[#151515] p-3 rounded-lg border border-slate-800" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
+              {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>Level {i+1}</option>)}
             </select>
           </div>
+          
           <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{saving ? 'SAVING...' : (editingId ? 'UPDATE' : 'PUBLISH')}</button>
         </form>
       </main>
