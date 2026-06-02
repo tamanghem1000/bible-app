@@ -16,14 +16,14 @@ export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [questions, setQuestions] = useState([]);
-  const [scores, setScores] = useState([]); // New state
+  const [scores, setScores] = useState([]);
   const [filter, setFilter] = useState('');
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('admin_auth') === 'true') {
+    if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') === 'true') {
       setIsAuthenticated(true);
       fetchQuestions();
       fetchScores();
@@ -70,13 +70,22 @@ export default function AdminPage() {
 
   async function deleteScore(id) {
     if (!confirm('Delete this user score?')) return;
+    
+    // The header 'x-admin-token' must match your ADMIN_SECRET env variable
     const res = await fetch('/api/admin/delete-leaderboard', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-admin-token': 'Hem' 
+      },
       body: JSON.stringify({ id })
     });
-    if (res.ok) fetchScores();
-    else alert("Failed to delete score");
+    
+    if (res.ok) {
+      fetchScores();
+    } else {
+      alert("Failed to delete score. Check permissions.");
+    }
   }
 
   if (!isAuthenticated) return (
