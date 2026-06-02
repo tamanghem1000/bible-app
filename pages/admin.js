@@ -18,7 +18,12 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [questions, setQuestions] = useState([]);
   const [scores, setScores] = useState([]);
-  const [filter, setFilter] = useState('');
+  
+  // Filter States
+  const [filterCat, setFilterCat] = useState('Old Testament');
+  const [filterBook, setFilterBook] = useState(BOOKS['Old Testament'][0]);
+  const [filterLvl, setFilterLvl] = useState('');
+
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -124,16 +129,21 @@ export default function AdminPage() {
         </form>
 
         <section className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
-          <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter by Book, Category, or Level..." value={filter} onChange={(e) => setFilter(e.target.value)} />
-          {questions.filter(q => 
-            q.book.toLowerCase().includes(filter.toLowerCase()) || 
-            q.category.toLowerCase().includes(filter.toLowerCase()) ||
-            String(q.difficulty).includes(filter)
-          ).map(q => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={filterCat} onChange={e => { setFilterCat(e.target.value); setFilterBook(BOOKS[e.target.value][0]); }}>
+              {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
+            </select>
+            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={filterBook} onChange={e => setFilterBook(e.target.value)}>
+              {BOOKS[filterCat].map(b => <option key={b}>{b}</option>)}
+            </select>
+            <input type="number" min="1" max="10" placeholder="Level (1-10)" className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={filterLvl} onChange={e => setFilterLvl(e.target.value)} />
+          </div>
+
+          {questions.filter(q => q.category === filterCat && q.book === filterBook && (filterLvl === '' || String(q.difficulty) === filterLvl)).map(q => (
             <div key={q.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
               <div>
                 <p className="text-sm">{q.question}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest">{q.book} • {q.category} • LVL {q.difficulty}</p>
+                <p className="text-[10px] text-slate-500 uppercase tracking-widest">LVL {q.difficulty}</p>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => { setEditingId(q.id); setForm(q); window.scrollTo(0,0); }} className="text-blue-400">Edit</button>
