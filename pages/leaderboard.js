@@ -10,7 +10,7 @@ export default function LeaderboardPage() {
       try {
         const res = await fetch('/api/leaderboard');
         const data = await res.json();
-        setScores(data);
+        setScores(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error("Failed to load scores");
       } finally {
@@ -21,29 +21,48 @@ export default function LeaderboardPage() {
   }, []);
 
   return (
-    <>
+    <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
-      <main style={{ maxWidth: 600, margin: '40px auto', padding: 20, color: '#fff' }}>
-        <h1 style={{ color: '#c9a84c' }}>Leaderboard</h1>
-        {loading ? <p>Loading...</p> : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: 20 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid #c9a84c' }}>
-                <th style={{ textAlign: 'left', padding: 10 }}>Name</th>
-                <th style={{ textAlign: 'center', padding: 10 }}>Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {scores.map((s, i) => (
-                <tr key={i} style={{ borderBottom: '1px solid #333' }}>
-                  <td style={{ padding: 10 }}>{s.name}</td>
-                  <td style={{ textAlign: 'center', padding: 10 }}>{s.score} / {s.total}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <main className="max-w-2xl mx-auto p-6 md:p-12">
+        <header className="mb-10 text-center">
+          <h1 className="text-4xl font-black text-white">Global <span className="text-yellow-500">Standings</span></h1>
+          <p className="text-slate-500 mt-2 font-medium">Top performers across the platform</p>
+        </header>
+
+        {loading ? (
+          <div className="text-center py-20 text-slate-600 font-bold">LOADING DATA...</div>
+        ) : (
+          <div className="bg-[#0c0c0c] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
+            {scores.map((s, i) => (
+              <div 
+                key={s.id || i} 
+                className="flex items-center justify-between p-6 border-b border-slate-800 last:border-0 hover:bg-[#151515] transition-all duration-300"
+              >
+                <div className="flex items-center gap-6">
+                  <span className={`text-xl font-black w-8 ${i === 0 ? 'text-yellow-500' : i === 1 ? 'text-slate-400' : i === 2 ? 'text-orange-700' : 'text-slate-700'}`}>
+                    #{i + 1}
+                  </span>
+                  <div>
+                    <p className="font-bold text-white">{s.name}</p>
+                    <p className="text-[10px] text-slate-500 uppercase tracking-widest">
+                      {s.total} Questions Answered
+                    </p>
+                  </div>
+                </div>
+                <div className="bg-yellow-600/10 border border-yellow-600/20 text-yellow-500 px-4 py-2 rounded-xl font-black text-sm">
+                  {s.score} PTS
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        
+        {scores.length === 0 && !loading && (
+          <div className="text-center p-12 border border-slate-800 rounded-3xl text-slate-600">
+            No scores recorded yet. Be the first!
+          </div>
         )}
       </main>
-    </>
+    </div>
   );
 }

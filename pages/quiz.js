@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState([]);
@@ -25,95 +26,87 @@ export default function QuizPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name, score, total: questions.length })
     });
-    alert("Score Saved!");
-    setQuizState('setup');
-    setSaving(false);
-    setScore(0);
-    setCurrent(0);
+    window.location.href = '/leaderboard';
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 flex flex-col items-center">
-      
-      {/* SETUP SCREEN */}
-      {quizState === 'setup' && (
-        <div className="w-full max-w-md bg-slate-900 p-8 rounded-3xl shadow-2xl border border-slate-800">
-          <h1 className="text-4xl font-bold mb-6 text-yellow-500">Bible Quiz</h1>
-          <label className="block mb-2 text-sm text-gray-400">Select Book</label>
-          <select 
-            className="w-full p-4 bg-slate-800 rounded-xl mb-6 border border-slate-700 focus:ring-2 focus:ring-yellow-500 outline-none"
-            value={selectedBook}
-            onChange={(e) => setSelectedBook(e.target.value)}
-          >
-            <option value="Genesis">Genesis</option>
-            <option value="Exodus">Exodus</option>
-            <option value="Matthew">Matthew</option>
-            <option value="John">John</option>
-          </select>
-          <button onClick={startQuiz} className="w-full bg-yellow-600 hover:bg-yellow-500 p-4 rounded-xl font-bold transition transform hover:scale-[1.02]">
-            START QUIZ
-          </button>
-        </div>
-      )}
-
-      {/* PLAYING SCREEN */}
-      {quizState === 'playing' && questions[current] && (
-        <div className="w-full max-w-2xl bg-slate-900 p-8 rounded-3xl border border-slate-800 shadow-xl">
-          <div className="flex justify-between text-yellow-500 text-xs font-bold uppercase mb-4">
-            <span>{questions[current].book} {questions[current].chapter}</span>
-            <span>Question {current + 1} / {questions.length}</span>
+    <div className="min-h-screen bg-[#050505] text-slate-200">
+      <Navbar />
+      <main className="max-w-2xl mx-auto p-6 md:p-12 flex flex-col items-center justify-center min-h-[80vh]">
+        
+        {/* SETUP SCREEN */}
+        {quizState === 'setup' && (
+          <div className="w-full bg-[#0c0c0c] p-10 rounded-3xl border border-slate-800 shadow-2xl">
+            <h1 className="text-4xl font-black text-white mb-2">Bible <span className="text-yellow-500">Quiz</span></h1>
+            <p className="text-slate-500 mb-8">Select a book to begin your assessment.</p>
+            <select className="w-full p-4 bg-[#151515] rounded-2xl mb-6 border border-slate-800 outline-none focus:border-yellow-600" 
+                    value={selectedBook} onChange={(e) => setSelectedBook(e.target.value)}>
+              {['Genesis', 'Exodus', 'Matthew', 'John'].map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+            <button onClick={startQuiz} className="w-full bg-yellow-600 text-black py-4 rounded-2xl font-black hover:bg-yellow-500 transition active:scale-[0.98]">
+              BEGIN SESSION
+            </button>
           </div>
-          <h2 className="text-2xl font-medium mb-8">{questions[current].question}</h2>
-          
-          <div className="grid gap-3">
-            {questions[current].options.map((opt, i) => (
-              <button 
-                key={i} 
-                onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }}
-                disabled={answered}
-                className={`p-4 rounded-xl text-left border transition-all ${
-                  answered ? (i === questions[current].answer ? 'bg-green-800 border-green-600' : 'bg-slate-800 border-slate-700 opacity-50') 
-                           : 'bg-slate-800 border-slate-700 hover:bg-slate-700 hover:border-yellow-600'
-                }`}
-              >
-                {opt}
-              </button>
-            ))}
-          </div>
+        )}
 
-          {answered && (
-            <div className="mt-8 p-6 bg-slate-950 rounded-2xl border-l-4 border-yellow-500">
-              <p className="text-sm text-slate-400 mb-4">Reference: <span className="text-yellow-500 font-bold">{questions[current].scripture_reference}</span></p>
-              <button 
-                onClick={() => current + 1 < questions.length ? (setCurrent(c => c + 1), setAnswered(false)) : setQuizState('finished')}
-                className="w-full bg-white text-slate-900 py-3 rounded-xl font-bold hover:bg-yellow-400 transition"
-              >
-                {current + 1 < questions.length ? 'NEXT QUESTION' : 'SEE RESULTS'}
-              </button>
+        {/* PLAYING SCREEN */}
+        {quizState === 'playing' && questions[current] && (
+          <div className="w-full animate-in fade-in duration-500">
+            <div className="flex justify-between items-center mb-8">
+              <span className="text-[10px] font-black uppercase tracking-widest text-yellow-600">{questions[current].book} • Ch {questions[current].chapter}</span>
+              <span className="text-xs font-bold text-slate-600">{current + 1} / {questions.length}</span>
             </div>
-          )}
-        </div>
-      )}
+            <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 shadow-xl mb-6">
+              <h2 className="text-2xl font-bold text-white mb-8">{questions[current].question}</h2>
+              <div className="grid gap-4">
+                {questions[current].options.map((opt, i) => (
+                  <button key={i} onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }}
+                    disabled={answered}
+                    className={`p-5 rounded-2xl text-left border transition-all ${
+                      answered ? (i === questions[current].answer ? 'bg-green-900/20 border-green-600 text-green-500' : 'bg-[#151515] border-slate-800 opacity-50') 
+                               : 'bg-[#151515] border-slate-800 hover:border-yellow-600 hover:bg-[#1a1a1a]'
+                    }`}>
+                    {opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {answered && (
+              <div className="bg-yellow-600/10 p-6 rounded-2xl border border-yellow-600/20">
+                <p className="text-sm text-yellow-500 mb-4 font-bold">Reference: {questions[current].scripture_reference}</p>
+                <button onClick={() => current + 1 < questions.length ? (setCurrent(c => c + 1), setAnswered(false)) : setQuizState('finished')}
+                  className="w-full bg-white text-black py-4 rounded-xl font-bold hover:bg-slate-200 transition">
+                  {current + 1 < questions.length ? 'NEXT QUESTION' : 'SEE RESULTS'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
-      {/* FINISHED SCREEN */}
-      {quizState === 'finished' && (
-        <div className="w-full max-w-md bg-slate-900 p-8 rounded-3xl text-center border border-slate-800 shadow-2xl">
-          <h2 className="text-3xl font-bold mb-4">Quiz Complete!</h2>
-          <p className="text-xl mb-6 text-yellow-500">You scored {score} / {questions.length}</p>
-          <input 
-            placeholder="Enter your name" 
-            className="w-full p-4 bg-slate-800 rounded-xl mb-4 border border-slate-700 text-white"
-            onChange={(e) => setName(e.target.value)}
-          />
-          <button 
-            onClick={saveScore} 
-            disabled={saving || !name}
-            className="w-full bg-yellow-600 p-4 rounded-xl font-bold hover:bg-yellow-500 disabled:opacity-50"
-          >
-            {saving ? 'SAVING...' : 'SAVE SCORE & RESTART'}
-          </button>
-        </div>
-      )}
+        {/* FINISHED SCREEN */}
+        {quizState === 'finished' && (
+          <div className="bg-[#0c0c0c] p-10 rounded-3xl border border-slate-800 text-center shadow-2xl w-full">
+            <div className="relative w-32 h-32 mx-auto mb-6">
+              <svg className="w-full h-full -rotate-90">
+                <circle cx="64" cy="64" r="56" stroke="#151515" strokeWidth="8" fill="transparent" />
+                <circle cx="64" cy="64" r="56" stroke="#eab308" strokeWidth="8" fill="transparent" 
+                        strokeDasharray={`${(score / questions.length) * 352} 352`} strokeLinecap="round" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center font-black text-2xl">{Math.round((score / questions.length) * 100)}%</div>
+            </div>
+            <h2 className="text-3xl font-black text-white mb-2">Quiz Complete</h2>
+            <p className="text-slate-500 mb-8 font-medium">You got <span className="text-green-500">{score} correct</span> and <span className="text-red-500">{questions.length - score} wrong</span>.</p>
+            <input placeholder="Enter name for leaderboard" className="w-full p-4 bg-[#151515] rounded-xl mb-4 border border-slate-800 text-white outline-none focus:border-yellow-600"
+              onChange={(e) => setName(e.target.value)} />
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={saveScore} disabled={saving || !name} className="bg-yellow-600 text-black p-4 rounded-xl font-bold hover:bg-yellow-500 transition disabled:opacity-50">
+                {saving ? 'SAVING...' : 'SAVE SCORE'}
+              </button>
+              <a href="/leaderboard" className="bg-[#151515] border border-slate-800 p-4 rounded-xl font-bold hover:border-slate-600 text-white block">RANKINGS</a>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
