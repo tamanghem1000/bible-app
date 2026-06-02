@@ -5,23 +5,25 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default async function handler(req, res) {
-  const { id } = req.query; // This extracts the ID from the URL path automatically
+  const { id } = req.query;
 
   // 1. --- HANDLE UPDATE (PUT) ---
   if (req.method === 'PUT') {
     try {
-      const { question, image, options, answer, category, difficulty, reference } = req.body;
+      const { question, image, options, answer, category, difficulty, reference, book, chapter } = req.body;
 
       const { data, error } = await supabase
         .from('questions')
         .update({
           question,
-          image_url: image, // Maps the form's image string to your Supabase column
+          image_url: image,
           options,
           answer: Number(answer),
           category,
           difficulty,
-          scripture_reference: reference, // Maps the form's reference string to your Supabase column
+          scripture_reference: reference,
+          book: book,             // Added
+          chapter: Number(chapter) // Added
         })
         .eq('id', id)
         .select();
@@ -48,7 +50,6 @@ export default async function handler(req, res) {
     }
   }
 
-  // Fallback if someone hits this endpoint with a POST or GET request
   res.setHeader('Allow', ['PUT', 'DELETE']);
   return res.status(405).json({ error: `Method ${req.method} not allowed` });
 }
