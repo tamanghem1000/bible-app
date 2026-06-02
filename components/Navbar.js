@@ -10,67 +10,44 @@ export default function Navbar() {
     { href: '/', label: 'Home' },
     { href: '/bible', label: 'Bible' },
     { href: '/quiz', label: 'Quiz' },
-    // { href: '/admin', label: 'Admin' },
+    { href: '/leaderboard', label: 'Leaderboard' },
   ];
 
   return (
-    <nav style={{
-      background: 'rgba(13,27,62,0.95)',
-      borderBottom: '1px solid rgba(201,168,76,0.25)',
-      backdropFilter: 'blur(12px)',
-      position: 'sticky',
-      top: 0,
-      zIndex: 100,
-    }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 60 }}>
+    <nav className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-xl border-b border-slate-800">
+      <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" style={{ textDecoration: 'none' }}>
-          <span style={{ fontFamily: 'Cinzel, serif', fontSize: '1.1rem', color: '#c9a84c', letterSpacing: '0.12em', fontWeight: 700 }}>
-            ✦ Hem Bible APP
-          </span>
+        <Link href="/" className="text-xl font-black text-white tracking-widest uppercase">
+          HEM<span className="text-yellow-600">BIBLE</span>
         </Link>
 
-        {/* Desktop nav */}
-        <div className="desktop-nav" style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+        {/* Desktop Nav */}
+        <div className="hidden md:flex gap-8 items-center">
           {links.map(l => (
-            <Link key={l.href} href={l.href} style={{ textDecoration: 'none' }}>
-              <span className={`nav-link${router.pathname === l.href || (l.href !== '/' && router.pathname.startsWith(l.href)) ? ' active' : ''}`}>
-                {l.label}
-              </span>
+            <Link key={l.href} href={l.href} 
+                  className={`text-sm font-bold tracking-widest transition ${router.pathname === l.href ? 'text-yellow-500' : 'text-slate-400 hover:text-white'}`}>
+              {l.label.toUpperCase()}
             </Link>
           ))}
         </div>
 
-        {/* Mobile hamburger */}
-        <button
-          onClick={() => setOpen(!open)}
-          className="mobile-menu-btn"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#c9a84c', fontSize: '1.5rem', display: 'none' }}
-          aria-label="Menu"
-        >
+        {/* Mobile Hamburger */}
+        <button onClick={() => setOpen(!open)} className="md:hidden text-white text-2xl">
           {open ? '✕' : '☰'}
         </button>
       </div>
 
-      {/* Mobile dropdown */}
+      {/* Mobile Dropdown */}
       {open && (
-        <div className="mobile-dropdown" style={{ borderTop: '1px solid rgba(201,168,76,0.15)', padding: '12px 20px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div className="md:hidden bg-[#0c0c0c] border-b border-slate-800 p-6 flex flex-col gap-6">
           {links.map(l => (
-            <Link key={l.href} href={l.href} onClick={() => setOpen(false)} style={{ textDecoration: 'none' }}>
-              <span className={`nav-link${router.pathname === l.href ? ' active' : ''}`} style={{ fontSize: '1rem' }}>
-                {l.label}
-              </span>
+            <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
+                  className={`text-lg font-bold ${router.pathname === l.href ? 'text-yellow-500' : 'text-white'}`}>
+              {l.label}
             </Link>
           ))}
         </div>
       )}
-
-      <style jsx>{`
-        @media (max-width: 640px) {
-          .desktop-nav { display: none !important; }
-          .mobile-menu-btn { display: block !important; }
-        }
-      `}</style>
     </nav>
   );
 }

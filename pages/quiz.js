@@ -3,7 +3,7 @@ import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
   const [questions, setQuestions] = useState([]);
-  const [selectedBook, setSelectedBook] = useState('Genesis');
+  const [selectedBook, setSelectedBook] = useState('General');
   const [quizState, setQuizState] = useState('setup'); // setup, playing, finished
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
@@ -38,11 +38,26 @@ export default function QuizPage() {
         {quizState === 'setup' && (
           <div className="w-full bg-[#0c0c0c] p-10 rounded-3xl border border-slate-800 shadow-2xl">
             <h1 className="text-4xl font-black text-white mb-2">Bible <span className="text-yellow-500">Quiz</span></h1>
-            <p className="text-slate-500 mb-8">Select a book to begin your assessment.</p>
-            <select className="w-full p-4 bg-[#151515] rounded-2xl mb-6 border border-slate-800 outline-none focus:border-yellow-600" 
-                    value={selectedBook} onChange={(e) => setSelectedBook(e.target.value)}>
-              {['Genesis', 'Exodus', 'Matthew', 'John'].map(b => <option key={b} value={b}>{b}</option>)}
+            <p className="text-slate-500 mb-8">Select a category or book to begin.</p>
+            
+            <select 
+              className="w-full p-4 bg-[#151515] rounded-2xl mb-6 border border-slate-800 outline-none focus:border-yellow-600 text-white" 
+              value={selectedBook} 
+              onChange={(e) => setSelectedBook(e.target.value)}
+            >
+              <option value="General">-- General (All Books) --</option>
+              
+              <optgroup label="Old Testament" className="bg-[#1a1a1a] text-yellow-600">
+                <option value="Genesis">Genesis</option>
+                <option value="Exodus">Exodus</option>
+              </optgroup>
+              
+              <optgroup label="New Testament" className="bg-[#1a1a1a] text-yellow-600">
+                <option value="Matthew">Matthew</option>
+                <option value="John">John</option>
+              </optgroup>
             </select>
+            
             <button onClick={startQuiz} className="w-full bg-yellow-600 text-black py-4 rounded-2xl font-black hover:bg-yellow-500 transition active:scale-[0.98]">
               BEGIN SESSION
             </button>
@@ -56,6 +71,7 @@ export default function QuizPage() {
               <span className="text-[10px] font-black uppercase tracking-widest text-yellow-600">{questions[current].book} • Ch {questions[current].chapter}</span>
               <span className="text-xs font-bold text-slate-600">{current + 1} / {questions.length}</span>
             </div>
+            
             <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 shadow-xl mb-6">
               <h2 className="text-2xl font-bold text-white mb-8">{questions[current].question}</h2>
               <div className="grid gap-4">
@@ -71,6 +87,7 @@ export default function QuizPage() {
                 ))}
               </div>
             </div>
+
             {answered && (
               <div className="bg-yellow-600/10 p-6 rounded-2xl border border-yellow-600/20">
                 <p className="text-sm text-yellow-500 mb-4 font-bold">Reference: {questions[current].scripture_reference}</p>
@@ -92,12 +109,19 @@ export default function QuizPage() {
                 <circle cx="64" cy="64" r="56" stroke="#eab308" strokeWidth="8" fill="transparent" 
                         strokeDasharray={`${(score / questions.length) * 352} 352`} strokeLinecap="round" />
               </svg>
-              <div className="absolute inset-0 flex items-center justify-center font-black text-2xl">{Math.round((score / questions.length) * 100)}%</div>
+              <div className="absolute inset-0 flex items-center justify-center font-black text-2xl">
+                {Math.round((score / questions.length) * 100)}%
+              </div>
             </div>
+            
             <h2 className="text-3xl font-black text-white mb-2">Quiz Complete</h2>
-            <p className="text-slate-500 mb-8 font-medium">You got <span className="text-green-500">{score} correct</span> and <span className="text-red-500">{questions.length - score} wrong</span>.</p>
+            <p className="text-slate-500 mb-8 font-medium">
+              You got <span className="text-green-500">{score} correct</span> and <span className="text-red-500">{questions.length - score} wrong</span>.
+            </p>
+            
             <input placeholder="Enter name for leaderboard" className="w-full p-4 bg-[#151515] rounded-xl mb-4 border border-slate-800 text-white outline-none focus:border-yellow-600"
               onChange={(e) => setName(e.target.value)} />
+            
             <div className="grid grid-cols-2 gap-4">
               <button onClick={saveScore} disabled={saving || !name} className="bg-yellow-600 text-black p-4 rounded-xl font-bold hover:bg-yellow-500 transition disabled:opacity-50">
                 {saving ? 'SAVING...' : 'SAVE SCORE'}
