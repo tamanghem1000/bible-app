@@ -28,15 +28,27 @@ export default function QuizPage() {
   async function saveScore() {
     if (!name.trim()) return alert("Please enter your name!");
     setSaving(true);
-    const res = await fetch('/api/leaderboard', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, score, total: questions.length })
-    });
-    if (res.ok) {
-      window.location.href = '/leaderboard';
-    } else {
-      alert("Failed to save score. Please try again.");
+    
+    try {
+      const res = await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: name.trim(), 
+          score: score, 
+          total: questions.length 
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        window.location.href = '/leaderboard';
+      } else {
+        throw new Error(data.error || "Failed to save score");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
       setSaving(false);
     }
   }
