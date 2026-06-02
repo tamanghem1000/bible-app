@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 
+const BOOKS = {
+  "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
+  "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"],
+  "General": ["General"]
+};
+
 const EMPTY_FORM = {
   question: '', options: ['', '', '', ''], answer: 0,
   category: 'General', difficulty: 1, scripture_reference: '',
-  book: 'Genesis', chapter: 1
+  book: 'General', chapter: 1
 };
 
 export default function AdminPage() {
@@ -65,29 +71,16 @@ export default function AdminPage() {
 
   async function deleteScore(id) {
     if (!confirm('Delete this user score?')) return;
-    
     try {
       const res = await fetch('/api/delete-leaderboard', {
         method: 'DELETE',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-admin-token': 'Hem' 
-        },
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': 'Hem' },
         body: JSON.stringify({ id })
       });
-      
       const result = await res.json();
-      
-      if (res.ok) {
-        alert("Score deleted successfully!");
-        fetchScores();
-      } else {
-        alert(`Error: ${result.error || 'Unauthorized'}`);
-      }
-    } catch (err) {
-      alert("Failed to connect to the server.");
-      console.error(err);
-    }
+      if (res.ok) { alert("Score deleted successfully!"); fetchScores(); }
+      else { alert(`Error: ${result.error || 'Unauthorized'}`); }
+    } catch (err) { alert("Failed to connect to the server."); }
   }
 
   if (!isAuthenticated) return (
@@ -106,6 +99,17 @@ export default function AdminPage() {
         <form onSubmit={saveQuestion} className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 space-y-6">
           <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: BOOKS[e.target.value][0]})}>
+              {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
+            </select>
+            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
+              {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
+            </select>
+            <input type="number" className="bg-[#151515] p-3 rounded-xl border border-slate-800" placeholder="Difficulty (1-5)" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})} />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
             {form.options.map((opt, i) => (
               <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${form.answer === i ? 'bg-yellow-600/20 border-yellow-600' : 'bg-[#151515] border-slate-800'}`}>
@@ -121,7 +125,7 @@ export default function AdminPage() {
           <input className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full mb-6" placeholder="Filter questions..." value={filter} onChange={(e) => setFilter(e.target.value)} />
           {questions.filter(q => q.book.toLowerCase().includes(filter.toLowerCase())).map(q => (
             <div key={q.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
-              <p className="text-sm truncate mr-4">{q.question}</p>
+              <p className="text-sm truncate mr-4">{q.question} <span className="text-slate-500">({q.book})</span></p>
               <div className="flex gap-2">
                 <button onClick={() => { setEditingId(q.id); setForm(q); window.scrollTo(0,0); }} className="text-blue-400">Edit</button>
                 <button onClick={() => deleteQuestion(q.id)} className="text-red-500">Delete</button>
