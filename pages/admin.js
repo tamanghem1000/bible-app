@@ -74,7 +74,7 @@ export default function AdminPage() {
     try {
       const res = await fetch('/api/delete-leaderboard', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': 'Hem' },
+        headers: { 'Content-Type': 'application/json', 'x-admin-token': 'HemBible' },
         body: JSON.stringify({ id })
       });
       const result = await res.json();
@@ -85,7 +85,7 @@ export default function AdminPage() {
 
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
-      <form onSubmit={(e) => { e.preventDefault(); if(password === 'Hem') { localStorage.setItem('admin_auth','true'); setIsAuthenticated(true); fetchQuestions(); fetchScores(); } }} className="bg-[#0c0c0c] p-8 rounded-2xl border border-slate-800 w-full max-w-sm">
+      <form onSubmit={(e) => { e.preventDefault(); if(password === 'HemBible') { localStorage.setItem('admin_auth','true'); setIsAuthenticated(true); fetchQuestions(); fetchScores(); } }} className="bg-[#0c0c0c] p-8 rounded-2xl border border-slate-800 w-full max-w-sm">
         <input type="password" placeholder="Password" className="w-full bg-[#151515] p-3 rounded-lg text-white mb-4" onChange={e => setPassword(e.target.value)} />
         <button className="w-full bg-yellow-600 py-3 rounded-lg font-bold">Login</button>
       </form>
