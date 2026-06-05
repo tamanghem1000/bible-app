@@ -1,78 +1,32 @@
-export default async function handler(req, res) {
-  let { book, chapter } = req.query;
-  
-  if (!book || !chapter) {
-    return res.status(400).json({ error: 'Book and chapter are required' });
-  }
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
-  // Normalize book names for universal API routing if needed
-  // e.g., "John" -> "john", "1 John" -> "1john"
-  const normalizedBook = book.toLowerCase().replace(/\s+/g, '');
+export default async function handler(req, res) {
+  if (req.method !== 'POST') return res.status(405).end();
+
+  const { message } = req.body;
 
   try {
-    // 1. Fetch English (KJV) from bible-api.com
-    const enUrl = `https://bible-api.com/${encodeURIComponent(book)}+${chapter}?translation=kjv`;
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     
-    // 2. Fetch Nepali from an open-source raw JSON Bible API mirror (e.g., modular bibles)
-    // Most public mirrors use standardized book abbreviations or numbers (e.g., 'jhn' for John)
-    // For a highly reliable open API fallback, we map or fetch from a public multi-language raw engine:
-    const neUrl = `https://cdn.jsdelivr.net/gh/ayushsubedi/nepali-bible-json@master/database/${normalizedBook}/${chapter}.json`;
-
-    // Fetch both in parallel to keep your Vercel function blazing fast
-    const [enResponse, neResponse] = await Promise.allSettled([
-      fetch(enUrl).then(res => res.ok ? res.json() : null),
-      fetch(neUrl).then(res => res.ok ? res.json() : null)
-    ]);
-
-    const enData = enResponse.status === 'fulfilled' ? enResponse.value : null;
-    const neData = neResponse.status === 'fulfilled' ? neResponse.value : null;
-
-    if (!enData && !neData) {
-      throw new Error('Failed to fetch from both English and Nepali translation sources.');
-    }
-
-    // 3. Zip/Merge the verses together by verse number
-    const totalVerses = Math.max(
-      enData?.verses?.length || 0, 
-      neData?.verses?.length || Object.keys(neData || {}).length || 0
-    );
-
-    const parallelVerses = [];
-
-    for (let i = 0; i < totalVerses; i++) {
-      // bible-api.com uses array elements
-      const enVerse = enData?.verses?.[i];
-      
-      // Handle varying structure of open-source Nepali JSON formats 
-      // (Some use arrays, some use object keys like {"1": "text"})
-      let neVerseText = "";
-      if (neData) {
-        if (Array.isArray(neData)) {
-          neVerseText = neData[i]?.text || neData[i];
-        } else {
-          neVerseText = neData[i + 1] || neData[String(i + 1)]; // 1-indexed verse keys
-        }
-      }
-
-      parallelVerses.push({
-        verse: enVerse?.verse || (i + 1),
-        text_en: enVerse?.text?.trim() || "Translation unavailable",
-        text_ne: neVerseText?.trim() || "अनुवाद उपलब्ध छैन"
-      });
-    }
-
-    // Return the combined parallel payload
-    return res.status(200).json({
-      book: book,
-      chapter: parseInt(chapter),
-      translations: {
-        english: "King James Version (KJV)",
-        nepali: "Nepali Bible"
-      },
-      verses: parallelVerses
+    // The model configuration must be passed explicitly
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-1.5-flash" 
     });
 
-  } catch (e) {
-    return res.status(500).json({ error: 'Failed to stitch translations', message: e.message });
+    // Start a chat session to use the system instruction
+    const chat = model.startChat({
+      history: [
+        {
+          role: "user",
+          parts: [{ text: "You are a faithful Bible assistant. Your ONLY purpose is to answer questions about the Bible, scripture, and Christian theology. If the user asks about anything else, you MUST reply: 'I can only assist with Bible-related questions.' Always provide the book, chapter, and verse if applicable." }],
+        },
+      ],
+    });
+
+    const result = await chat.sendMessage(message);
+    res.status(200).json({ reply: result.response.text() });
+  } catch (error) {
+    console.error("Gemini API Error:", error);
+    res.status(500).json({ error: "Failed to connect to the assistant." });
   }
 }

@@ -1,6 +1,7 @@
 import Head from 'next/head';
 import Link from 'next/link';
 import Navbar from '../components/Navbar';
+import BibleChatBot from '../components/BibleChatBot';
 
 export default function Home() {
   return (
@@ -129,6 +130,9 @@ export default function Home() {
         <footer style={{ textAlign: 'center', padding: '32px 24px', color: 'rgba(245,240,232,0.3)', fontSize: '0.8rem', fontFamily: 'Cinzel, serif', letterSpacing: '0.08em' }}>
           SACRED WORD · BUILT WITH ♥ · {new Date().getFullYear()}
         </footer>
+        
+        {/* Chatbot integrated */}
+        <BibleChatBot />
       </main>
     </>
   );
