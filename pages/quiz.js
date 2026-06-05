@@ -17,13 +17,14 @@ export default function QuizPage() {
   };
 
   async function startQuiz() {
-    // Only pass book if it's not General
-    let url = `/api/questions?difficulty=${selection.level}`;
-    if (selection.category !== 'General') {
-      url += `&book=${encodeURIComponent(selection.book)}`;
-    }
-    
-    const res = await fetch(url);
+    // Create a query object to hold parameters
+    const params = new URLSearchParams({
+      difficulty: selection.level,
+      book: selection.book
+    });
+
+    // Fetch using the built parameters
+    const res = await fetch(`/api/questions?${params.toString()}`);
     const data = await res.json();
     
     if (!data || data.length === 0) return alert("No questions found for this selection!");
