@@ -18,8 +18,8 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [questions, setQuestions] = useState([]);
   const [scores, setScores] = useState([]);
+  const [selectedQuestions, setSelectedQuestions] = useState([]); // Added state for multi-select
   
-  // Filter States
   const [filterCat, setFilterCat] = useState('Old Testament');
   const [filterBook, setFilterBook] = useState(BOOKS['Old Testament'][0]);
   const [filterLvl, setFilterLvl] = useState('');
@@ -68,6 +68,16 @@ export default function AdminPage() {
     setSaving(false);
   }
 
+  // Updated delete to support batch
+  async function deleteSelectedQuestions() {
+    if (!confirm(`Delete ${selectedQuestions.length} selected questions?`)) return;
+    for (const id of selectedQuestions) {
+      await fetch(`/api/questions/${id}`, { method: 'DELETE' });
+    }
+    setSelectedQuestions([]);
+    fetchQuestions();
+  }
+
   async function deleteQuestion(id) {
     if (!confirm('Delete this question?')) return;
     await fetch(`/api/questions/${id}`, { method: 'DELETE' });
@@ -76,17 +86,17 @@ export default function AdminPage() {
 
   async function deleteScore(id) {
     if (!confirm('Delete this user score?')) return;
-    try {
-      const res = await fetch('/api/delete-leaderboard', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'x-admin-token': 'HemBible' },
-        body: JSON.stringify({ id })
-      });
-      const result = await res.json();
-      if (res.ok) { alert("Score deleted successfully!"); fetchScores(); }
-      else { alert(`Error: ${result.error || 'Unauthorized'}`); }
-    } catch (err) { alert("Failed to connect to the server."); }
+    const res = await fetch('/api/delete-leaderboard', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-token': 'HemBible' },
+      body: JSON.stringify({ id })
+    });
+    if (res.ok) { alert("Score deleted successfully!"); fetchScores(); }
   }
+
+  const toggleSelect = (id) => {
+    setSelectedQuestions(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
+  };
 
   if (!isAuthenticated) return (
     <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6">
@@ -101,34 +111,39 @@ export default function AdminPage() {
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
       <main className="max-w-4xl mx-auto p-6 space-y-8">
+        {/* ... (Form remains the same) ... */}
         <form onSubmit={saveQuestion} className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800 space-y-6">
-          <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
-          <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: BOOKS[e.target.value][0]})}>
-              {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
-            </select>
-            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
-              {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
-            </select>
-            <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
-              {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>Level {i+1}</option>)}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            {form.options.map((opt, i) => (
-              <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${form.answer === i ? 'bg-yellow-600/20 border-yellow-600' : 'bg-[#151515] border-slate-800'}`}>
-                <input type="radio" name="correctAnswer" checked={form.answer === i} onChange={() => setForm({...form, answer: i})} className="cursor-pointer" />
-                <input className="w-full bg-transparent outline-none" placeholder={`Option ${i+1}`} value={opt} onChange={e => { let n = [...form.options]; n[i] = e.target.value; setForm({...form, options: n}); }} />
-              </div>
-            ))}
-          </div>
-          <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{saving ? 'SAVING...' : (editingId ? 'UPDATE' : 'PUBLISH')}</button>
+           <h2 className="text-xl font-bold">{editingId ? 'Edit Question' : 'Add New Question'}</h2>
+           <textarea className="w-full bg-[#151515] p-4 rounded-xl border border-slate-800" placeholder="Question" value={form.question} onChange={e => setForm({...form, question: e.target.value})} />
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.category} onChange={e => setForm({...form, category: e.target.value, book: BOOKS[e.target.value][0]})}>
+               {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
+             </select>
+             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.book} onChange={e => setForm({...form, book: e.target.value})}>
+               {BOOKS[form.category].map(b => <option key={b}>{b}</option>)}
+             </select>
+             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800 w-full" value={form.difficulty} onChange={e => setForm({...form, difficulty: e.target.value})}>
+               {[...Array(10)].map((_, i) => <option key={i+1} value={i+1}>Level {i+1}</option>)}
+             </select>
+           </div>
+           <div className="grid grid-cols-2 gap-4">
+             {form.options.map((opt, i) => (
+               <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border ${form.answer === i ? 'bg-yellow-600/20 border-yellow-600' : 'bg-[#151515] border-slate-800'}`}>
+                 <input type="radio" name="correctAnswer" checked={form.answer === i} onChange={() => setForm({...form, answer: i})} className="cursor-pointer" />
+                 <input className="w-full bg-transparent outline-none" placeholder={`Option ${i+1}`} value={opt} onChange={e => { let n = [...form.options]; n[i] = e.target.value; setForm({...form, options: n}); }} />
+               </div>
+             ))}
+           </div>
+           <button className="w-full bg-yellow-600 py-4 rounded-xl font-black">{saving ? 'SAVING...' : (editingId ? 'UPDATE' : 'PUBLISH')}</button>
         </form>
 
         <section className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold">Manage Questions</h2>
+            {selectedQuestions.length > 0 && (
+              <button onClick={deleteSelectedQuestions} className="bg-red-600 px-4 py-2 rounded-xl text-sm font-bold">Delete {selectedQuestions.length} Selected</button>
+            )}
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <select className="bg-[#151515] p-3 rounded-xl border border-slate-800" value={filterCat} onChange={e => { setFilterCat(e.target.value); setFilterBook(BOOKS[e.target.value][0]); }}>
               {Object.keys(BOOKS).map(cat => <option key={cat}>{cat}</option>)}
@@ -141,9 +156,12 @@ export default function AdminPage() {
 
           {questions.filter(q => q.category === filterCat && q.book === filterBook && (filterLvl === '' || String(q.difficulty) === filterLvl)).map(q => (
             <div key={q.id} className="flex justify-between items-center p-4 bg-[#151515] rounded-xl border border-slate-800 mb-4">
-              <div>
-                <p className="text-sm">{q.question}</p>
-                <p className="text-[10px] text-slate-500 uppercase tracking-widest">LVL {q.difficulty}</p>
+              <div className="flex items-center gap-4">
+                <input type="checkbox" checked={selectedQuestions.includes(q.id)} onChange={() => toggleSelect(q.id)} />
+                <div>
+                  <p className="text-sm">{q.question}</p>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-widest">LVL {q.difficulty}</p>
+                </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => { setEditingId(q.id); setForm(q); window.scrollTo(0,0); }} className="text-blue-400">Edit</button>
