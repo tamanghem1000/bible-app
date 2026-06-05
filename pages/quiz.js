@@ -48,6 +48,13 @@ export default function QuizPage() {
     } catch (err) { alert(err.message); setSaving(false); }
   }
 
+  const getResults = (percentage) => {
+    if (percentage >= 90) return { title: "Scripture Master", verse: "His lord said unto him, Well done, good and faithful servant. — Matthew 25:21" };
+    if (percentage >= 70) return { title: "Bible Scholar", verse: "Thy word is a lamp unto my feet, and a light unto my path. — Psalm 119:105" };
+    if (percentage >= 50) return { title: "Rabbit", verse: "The righteous are as bold as a lion, but the wicked flee when no one pursues. — Proverbs 28:1" };
+    return { title: "Seeker", verse: "Be of good courage, and he shall strengthen your heart. — Psalm 31:24" };
+  };
+
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
@@ -110,25 +117,39 @@ export default function QuizPage() {
         {quizState === 'finished' && (
           <div className="space-y-6">
             <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
-              <h2 className="text-3xl font-black text-yellow-500 mb-6">Quiz Finished!</h2>
-              <p className="text-xl font-bold mb-6">You scored {score} / {questions.length}</p>
-              <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
-              <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
+              {(() => {
+                const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+                const res = getResults(percentage);
+                const radius = 60;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (percentage / 100) * circumference;
+                return (
+                  <>
+                    <h2 className="text-4xl font-black text-yellow-500 mb-6">{res.title}</h2>
+                    <div className="relative flex justify-center mb-6">
+                      <svg className="w-40 h-40 transform -rotate-90">
+                        <circle cx="80" cy="80" r={radius} stroke="#151515" strokeWidth="12" fill="transparent" />
+                        <circle cx="80" cy="80" r={radius} stroke="#ca8a04" strokeWidth="12" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl font-black text-white">{percentage}%</span></div>
+                    </div>
+                    <p className="text-xl font-bold mb-2">Score: {score} / {questions.length}</p>
+                    <p className="text-slate-500 mb-6 italic">"{res.verse}"</p>
+                    <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
+                    <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
+                  </>
+                );
+              })()}
             </div>
             <h3 className="text-xl font-bold mt-10">Review Your Answers</h3>
             {attempts.map((a, i) => (
               <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800 mb-4">
                 <p className="font-bold mb-4">{i+1}. {a.question}</p>
-                {/* User's choice */}
                 <p className={a.selected === a.correct ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
-                  {a.selected === a.correct ? "✓ Correct: " : "✗ Your Answer: "} 
-                  {a.options[a.selected]}
+                  {a.selected === a.correct ? "✓ Correct: " : "✗ Your Answer: "} {a.options[a.selected]}
                 </p>
-                {/* Correct answer if missed */}
                 {a.selected !== a.correct && (
-                  <p className="text-green-400 font-semibold mt-1">
-                    ✓ Correct Answer: {a.options[a.correct]}
-                  </p>
+                  <p className="text-green-400 font-semibold mt-1">✓ Correct Answer: {a.options[a.correct]}</p>
                 )}
               </div>
             ))}
