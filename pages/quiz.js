@@ -16,27 +16,22 @@ export default function QuizPage() {
     "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"]
   };
 
-async function startQuiz(level, book) {
-  // Use the parameters passed from the button click
-  const url = `/api/questions?difficulty=${level}&book=${encodeURIComponent(book || 'General')}`;
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    
-    if (!data || data.length === 0) {
-      alert(`No questions found for ${book} Level ${level}.`);
-      return;
+  async function startQuiz(level, book) {
+    const url = `/api/questions?difficulty=${level}&book=${encodeURIComponent(book || 'General')}`;
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data || data.length === 0) {
+        alert(`No questions found for ${book} Level ${level}.`);
+        return;
+      }
+      setQuestions(data.sort(() => Math.random() - 0.5));
+      setQuizState('playing');
+    } catch (err) {
+      console.error("Fetch error:", err);
     }
-    
-    setQuestions(data.sort(() => Math.random() - 0.5));
-    setQuizState('playing');
-  } catch (err) {
-    console.error("Fetch error:", err);
   }
-}
 
-  // ... rest of your saveScore, getResults, and JSX remain exactly as they were
   async function saveScore() {
     if (!name.trim()) return alert("Please enter your name!");
     setSaving(true);
@@ -46,9 +41,8 @@ async function startQuiz(level, book) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name.trim(), score: score, total: questions.length })
       });
-      const data = await res.json();
       if (res.ok) { window.location.href = '/leaderboard'; }
-      else { throw new Error(data.error || "Failed to save score"); }
+      else { throw new Error("Failed to save score"); }
     } catch (err) { alert("Error: " + err.message); setSaving(false); }
   }
 
@@ -59,7 +53,7 @@ async function startQuiz(level, book) {
     return { title: "Seeker", verse: "Be of good courage, and he shall strengthen your heart. — Psalm 31:24" };
   };
 
- return (
+  return (
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
       <main className="max-w-2xl mx-auto p-6">
@@ -81,17 +75,7 @@ async function startQuiz(level, book) {
         {quizState === 'level' && (
           <div className="grid grid-cols-2 gap-4">
             {[...Array(10)].map((_, i) => (
-              <button 
-                key={i+1} 
-                onClick={() => { 
-                  const level = i + 1;
-                  setSelection({...selection, level: level}); 
-                  startQuiz(level, selection.book || 'General'); 
-                }} 
-                className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600"
-              >
-                Level {i+1}
-              </button>
+              <button key={i+1} onClick={() => { const level = i + 1; setSelection({...selection, level: level}); startQuiz(level, selection.book || 'General'); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600">Level {i+1}</button>
             ))}
           </div>
         )}
@@ -139,3 +123,4 @@ async function startQuiz(level, book) {
       </main>
     </div>
   );
+}
