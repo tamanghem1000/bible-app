@@ -108,10 +108,20 @@ export default function QuizPage() {
             {(() => {
               const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
               const res = getResults(percentage);
+              const radius = 60;
+              const circumference = 2 * Math.PI * radius;
+              const offset = circumference - (percentage / 100) * circumference;
               return (
                 <>
-                  <h2 className="text-4xl font-black text-yellow-500 mb-2">{res.title}</h2>
-                  <p className="text-2xl font-bold mb-4">{score} / {questions.length}</p>
+                  <h2 className="text-4xl font-black text-yellow-500 mb-6">{res.title}</h2>
+                  <div className="relative flex justify-center mb-6">
+                    <svg className="w-40 h-40 transform -rotate-90">
+                      <circle cx="80" cy="80" r={radius} stroke="#151515" strokeWidth="12" fill="transparent" />
+                      <circle cx="80" cy="80" r={radius} stroke="#ca8a04" strokeWidth="12" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
+                    </svg>
+                    <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl font-black text-white">{percentage}%</span></div>
+                  </div>
+                  <p className="text-xl font-bold mb-2">Score: {score} / {questions.length}</p>
                   <p className="text-slate-500 mb-6 italic">"{res.verse}"</p>
                   <input placeholder="Enter your name" className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" onChange={(e) => setName(e.target.value)} />
                   <button onClick={saveScore} disabled={saving} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">{saving ? 'SAVING...' : 'SAVE SCORE'}</button>
