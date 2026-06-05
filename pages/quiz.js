@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
@@ -12,6 +12,20 @@ export default function QuizPage() {
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
+  const [unlockedLevels, setUnlockedLevels] = useState([1]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('unlockedLevels');
+    if (saved) setUnlockedLevels(JSON.parse(saved));
+  }, []);
+
+  const unlockNextLevel = (completedLevel) => {
+    if (score >= 7 && !unlockedLevels.includes(completedLevel + 1)) {
+      const newLevels = [...unlockedLevels, completedLevel + 1];
+      setUnlockedLevels(newLevels);
+      localStorage.setItem('unlockedLevels', JSON.stringify(newLevels));
+    }
+  };
 
   const books = {
     "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
@@ -41,6 +55,7 @@ export default function QuizPage() {
   async function saveScore() {
     if (!name.trim()) return alert("Enter name!");
     setSaving(true);
+    unlockNextLevel(selection.level);
     try {
       const res = await fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim(), score: score, total: questions.length }) });
       if (res.ok) { window.location.href = '/leaderboard'; }
@@ -75,13 +90,24 @@ export default function QuizPage() {
           </div>
         )}
         {quizState === 'level' && (
-          <div className="grid grid-cols-2 gap-4">
-            {[...Array(10)].map((_, i) => (
-              <button key={i+1} onClick={() => { const level = i + 1; setSelection({...selection, level: level}); startQuiz(level, selection.book || 'General'); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600">Level {i+1}</button>
-            ))}
+          <div className="grid gap-4">
+            <div className="bg-yellow-600/10 border border-yellow-600/50 p-4 rounded-xl text-yellow-500 text-sm text-center">
+              Score at least 7 correct answers to unlock the next level!
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {[...Array(10)].map((_, i) => {
+                const level = i + 1;
+                const isLocked = !unlockedLevels.includes(level);
+                return (
+                  <button key={level} disabled={isLocked} onClick={() => { setSelection({...selection, level: level}); startQuiz(level, selection.book || 'General'); }} className={`p-6 border rounded-2xl ${isLocked ? 'bg-slate-900 border-slate-800 opacity-50 cursor-not-allowed' : 'bg-[#151515] border-slate-800 hover:border-yellow-600'}`}>
+                    {isLocked ? `🔒 Level ${level}` : `Level ${level}`}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
-        {quizState === 'playing' && questions[current] && (
+        {quizState === 'playing' && (
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <div className="flex justify-between text-xs text-slate-500 mb-4 uppercase tracking-widest">
               <span>Question {current + 1} of {questions.length}</span>
@@ -96,17 +122,12 @@ export default function QuizPage() {
                   else if (i === selectedOption) color = "bg-red-600/20 border-red-500";
                 }
                 return (
-                  <button key={i} disabled={answered} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border text-left ${color}`}>
-                    {opt}
-                  </button>
+                  <button key={i} disabled={answered} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border text-left ${color}`}>{opt}</button>
                 );
               })}
             </div>
             {answered && (
               <div className="mt-6 p-4 rounded-xl bg-[#151515] border border-slate-800 text-center">
-                <p className={`font-bold mb-4 ${selectedOption === questions[current].answer ? "text-green-400" : "text-red-400"}`}>
-                  {selectedOption === questions[current].answer ? "Correct!" : "Wrong!"}
-                </p>
                 <button className="w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); setSelectedOption(null); } else { setQuizState('finished'); } }}>
                   {current + 1 < questions.length ? 'Next Question' : 'Finish Quiz'}
                 </button>
@@ -118,41 +139,21 @@ export default function QuizPage() {
           <div className="space-y-6">
             <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
               {(() => {
-                const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
+                const percentage = Math.round((score / questions.length) * 100);
                 const res = getResults(percentage);
-                const radius = 60;
-                const circumference = 2 * Math.PI * radius;
-                const offset = circumference - (percentage / 100) * circumference;
                 return (
                   <>
-                    <h2 className="text-4xl font-black text-yellow-500 mb-6">{res.title}</h2>
-                    <div className="relative flex justify-center mb-6">
-                      <svg className="w-40 h-40 transform -rotate-90">
-                        <circle cx="80" cy="80" r={radius} stroke="#151515" strokeWidth="12" fill="transparent" />
-                        <circle cx="80" cy="80" r={radius} stroke="#ca8a04" strokeWidth="12" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
-                      </svg>
-                      <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl font-black text-white">{percentage}%</span></div>
-                    </div>
-                    <p className="text-xl font-bold mb-2">Score: {score} / {questions.length}</p>
-                    <p className="text-slate-500 mb-6 italic">"{res.verse}"</p>
+                    <h2 className="text-3xl font-black text-yellow-500 mb-6">{res.title}</h2>
+                    <p className="text-xl font-bold mb-6">You scored {score} / {questions.length}</p>
                     <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
-                    <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
+                    <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold mb-4">SAVE SCORE</button>
+                    {score >= 7 && selection.level < 10 && (
+                      <button onClick={() => { setSelection({...selection, level: selection.level + 1}); startQuiz(selection.level + 1, selection.book || 'General'); }} className="w-full bg-green-600 py-4 rounded-xl font-bold">PROCEED TO LEVEL {selection.level + 1}</button>
+                    )}
                   </>
                 );
               })()}
             </div>
-            <h3 className="text-xl font-bold mt-10">Review Your Answers</h3>
-            {attempts.map((a, i) => (
-              <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800 mb-4">
-                <p className="font-bold mb-4">{i+1}. {a.question}</p>
-                <p className={a.selected === a.correct ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
-                  {a.selected === a.correct ? "✓ Correct: " : "✗ Your Answer: "} {a.options[a.selected]}
-                </p>
-                {a.selected !== a.correct && (
-                  <p className="text-green-400 font-semibold mt-1">✓ Correct Answer: {a.options[a.correct]}</p>
-                )}
-              </div>
-            ))}
           </div>
         )}
       </main>
