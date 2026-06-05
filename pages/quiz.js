@@ -8,7 +8,7 @@ export default function QuizPage() {
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
-  const [selectedOption, setSelectedOption] = useState(null); // Track user's specific choice
+  const [selectedOption, setSelectedOption] = useState(null);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
@@ -76,6 +76,10 @@ export default function QuizPage() {
         )}
         {quizState === 'playing' && questions[current] && (
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
+            <div className="flex justify-between text-xs text-slate-500 mb-4 uppercase tracking-widest">
+              <span>Question {current + 1} of {questions.length}</span>
+              <span>Level {selection.level}</span>
+            </div>
             <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
             <div className="grid gap-3">
               {questions[current].options.map((opt, i) => {
@@ -93,9 +97,11 @@ export default function QuizPage() {
             </div>
             {answered && (
               <div className="mt-6 p-4 rounded-xl bg-[#151515] border border-slate-800 text-center">
-                <p className="font-bold mb-4">{selectedOption === questions[current].answer ? "Correct!" : "Wrong!"}</p>
+                <p className={`font-bold mb-4 ${selectedOption === questions[current].answer ? "text-green-400" : "text-red-400"}`}>
+                  {selectedOption === questions[current].answer ? "Correct!" : "Wrong!"}
+                </p>
                 <button className="w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); setSelectedOption(null); } else { setQuizState('finished'); } }}>
-                  {current + 1 < questions.length ? 'Next' : 'Finish'}
+                  {current + 1 < questions.length ? 'Next Question' : 'Finish Quiz'}
                 </button>
               </div>
             )}
@@ -105,18 +111,25 @@ export default function QuizPage() {
           <div className="space-y-6">
             <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
               <h2 className="text-3xl font-black text-yellow-500 mb-6">Quiz Finished!</h2>
-              <p className="text-xl font-bold mb-6">Score: {score} / {questions.length}</p>
+              <p className="text-xl font-bold mb-6">You scored {score} / {questions.length}</p>
               <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
               <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
             </div>
-            <h3 className="text-xl font-bold mt-10">Level {selection.level} Correction</h3>
+            <h3 className="text-xl font-bold mt-10">Review Your Answers</h3>
             {attempts.map((a, i) => (
               <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800 mb-4">
                 <p className="font-bold mb-4">{i+1}. {a.question}</p>
-                <p className={a.selected === a.correct ? "text-green-400" : "text-red-400"}>
-                  Your answer: {a.options[a.selected]} {a.selected === a.correct ? '(Correct)' : '(Wrong)'}
+                {/* User's choice */}
+                <p className={a.selected === a.correct ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
+                  {a.selected === a.correct ? "✓ Correct: " : "✗ Your Answer: "} 
+                  {a.options[a.selected]}
                 </p>
-                {a.selected !== a.correct && <p className="text-green-400">Correct answer: {a.options[a.correct]}</p>}
+                {/* Correct answer if missed */}
+                {a.selected !== a.correct && (
+                  <p className="text-green-400 font-semibold mt-1">
+                    ✓ Correct Answer: {a.options[a.correct]}
+                  </p>
+                )}
               </div>
             ))}
           </div>
