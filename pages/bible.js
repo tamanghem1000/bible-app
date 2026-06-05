@@ -208,42 +208,12 @@ export default function BiblePage() {
               </h2>
               <div>
                 {verses.map(v => (
-                  <div key={v.verse} style={{ marginBottom: 24, display: 'flex', gap: 14 }}>
-                    {/* Verse Number Column */}
-                    <sup style={{ 
-                      fontFamily: 'Cinzel, serif', 
-                      fontSize: '0.75rem', 
-                      color: '#c9a84c', 
-                      fontWeight: 700, 
-                      minWidth: 24, 
-                      paddingTop: 4, 
-                      flexShrink: 0 
-                    }}>
+                  <p key={v.verse} className="verse-text" style={{ marginBottom: 12, display: 'flex', gap: 12 }}>
+                    <sup style={{ fontFamily: 'Cinzel, serif', fontSize: '0.65rem', color: '#8b1a1a', fontWeight: 700, minWidth: 24, paddingTop: 6, flexShrink: 0 }}>
                       {v.verse}
                     </sup>
-                    
-                    {/* Parallel Translations Stack */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
-                      {/* English Text */}
-                      <span style={{ 
-                        fontSize: '1.05rem', 
-                        lineHeight: '1.6', 
-                        color: '#c9a84c', 
-                        fontFamily: 'Lora, Georgia, serif' 
-                      }}>
-                        {v.text_en}
-                      </span>
-                      {/* Nepali Text */}
-                      <span style={{ 
-                        fontSize: '1.15rem', 
-                        lineHeight: '1.7', 
-                        color: '#c9a84c', 
-                        fontFamily: 'Mukta, Kalimati, sans-serif' 
-                      }}>
-                        {v.text_ne}
-                      </span>
-                    </div>
-                  </div>
+                    <span>{v.text}</span>
+                  </p>
                 ))}
               </div>
 
