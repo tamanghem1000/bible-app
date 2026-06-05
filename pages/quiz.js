@@ -16,23 +16,25 @@ export default function QuizPage() {
     "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"]
   };
 
-  async function startQuiz() {
-    // Create a query object to hold parameters
-    const params = new URLSearchParams({
-      difficulty: selection.level,
-      book: selection.book
-    });
+  async function startQuiz(level, book) {
+  // 1. Build the exact URL. Using encodeURIComponent is critical for books with spaces.
+  const url = `/api/questions?difficulty=${level}&book=${encodeURIComponent(book)}`;
 
-    // Fetch using the built parameters
-    const res = await fetch(`/api/questions?${params.toString()}`);
+  try {
+    const res = await fetch(url);
     const data = await res.json();
     
-    if (!data || data.length === 0) return alert("No questions found for this selection!");
+    if (!data || data.length === 0) {
+      alert("No questions found for this combination. Try a different level.");
+      return;
+    }
     
-    // Shuffle the filtered results
     setQuestions(data.sort(() => Math.random() - 0.5));
     setQuizState('playing');
+  } catch (err) {
+    console.error("Quiz fetch error:", err);
   }
+}
 
   // ... rest of your saveScore, getResults, and JSX remain exactly as they were
   async function saveScore() {
