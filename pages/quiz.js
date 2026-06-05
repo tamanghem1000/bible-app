@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Navbar from '../components/Navbar';
 
 export default function QuizPage() {
-  const [quizState, setQuizState] = useState('category'); 
+  const [quizState, setQuizState] = useState('category');
   const [selection, setSelection] = useState({ category: '', book: '', level: '' });
   const [questions, setQuestions] = useState([]);
   const [current, setCurrent] = useState(0);
@@ -10,6 +10,8 @@ export default function QuizPage() {
   const [answered, setAnswered] = useState(false);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
+  // NEW: Track user attempts for the summary
+  const [attempts, setAttempts] = useState([]);
 
   const books = {
     "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
@@ -21,37 +23,29 @@ export default function QuizPage() {
     try {
       const res = await fetch(url);
       const data = await res.json();
-      if (!data || data.length === 0) {
-        alert(`No questions found for ${book} Level ${level}.`);
-        return;
-      }
+      if (!data || data.length === 0) { alert(`No questions found.`); return; }
       setQuestions(data.sort(() => Math.random() - 0.5));
-      setQuizState('playing');
-    } catch (err) {
-      console.error("Fetch error:", err);
-    }
+      setAttempts([]); setScore(0); setCurrent(0); setQuizState('playing');
+    } catch (err) { console.error(err); }
+  }
+
+  function handleAnswer(index) {
+    if (answered) return;
+    setAnswered(true);
+    const isCorrect = index === questions[current].answer;
+    if (isCorrect) setScore(s => s + 1);
+    setAttempts([...attempts, { question: questions[current].question, options: questions[current].options, selected: index, correct: questions[current].answer }]);
   }
 
   async function saveScore() {
-    if (!name.trim()) return alert("Please enter your name!");
+    if (!name.trim()) return alert("Enter name!");
     setSaving(true);
     try {
-      const res = await fetch('/api/leaderboard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), score: score, total: questions.length })
-      });
+      const res = await fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim(), score: score, total: questions.length }) });
       if (res.ok) { window.location.href = '/leaderboard'; }
-      else { throw new Error("Failed to save score"); }
-    } catch (err) { alert("Error: " + err.message); setSaving(false); }
+      else { throw new Error("Failed"); }
+    } catch (err) { alert(err.message); setSaving(false); }
   }
-
-  const getResults = (percentage) => {
-    if (percentage >= 90) return { title: "Scripture Master", verse: "His lord said unto him, Well done, good and faithful servant. — Matthew 25:21" };
-    if (percentage >= 70) return { title: "Bible Scholar", verse: "Thy word is a lamp unto my feet, and a light unto my path. — Psalm 119:105" };
-    if (percentage >= 50) return { title: "Rabbit", verse: "The righteous are as bold as a lion, but the wicked flee when no one pursues. — Proverbs 28:1" };
-    return { title: "Seeker", verse: "Be of good courage, and he shall strengthen your heart. — Psalm 31:24" };
-  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200">
@@ -83,51 +77,39 @@ export default function QuizPage() {
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
             <div className="grid gap-3">
-              {questions[current].options.map((opt, i) => {
-                let btnStyle = "bg-[#151515] border-slate-800";
-                if (answered) {
-                  if (i === questions[current].answer) btnStyle = "bg-green-600/20 border-green-500";
-                  else btnStyle = "bg-red-600/20 border-red-500 opacity-50";
-                }
-                return (
-                  <button key={i} disabled={answered} onClick={() => { setAnswered(true); if(i === questions[current].answer) setScore(s => s + 1); }} className={`p-4 rounded-xl border text-left ${btnStyle}`}>
-                    {opt}
-                  </button>
-                );
-              })}
+              {questions[current].options.map((opt, i) => (
+                <button key={i} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border ${answered && i === questions[current].answer ? 'bg-green-600/20 border-green-500' : answered && i !== questions[current].answer ? 'opacity-50 border-slate-800' : 'bg-[#151515] border-slate-800'}`}>
+                  {opt}
+                </button>
+              ))}
             </div>
             {answered && (
-              <button className="mt-6 w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); } else { setQuizState('finished'); } }}>
-                {current + 1 < questions.length ? 'Next Question' : 'Finish Quiz'}
-              </button>
+              <button className="mt-6 w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); } else { setQuizState('finished'); } }}>Next</button>
             )}
           </div>
         )}
         {quizState === 'finished' && (
-          <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
-            {(() => {
-              const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
-              const res = getResults(percentage);
-              const radius = 60;
-              const circumference = 2 * Math.PI * radius;
-              const offset = circumference - (percentage / 100) * circumference;
-              return (
-                <>
-                  <h2 className="text-4xl font-black text-yellow-500 mb-6">{res.title}</h2>
-                  <div className="relative flex justify-center mb-6">
-                    <svg className="w-40 h-40 transform -rotate-90">
-                      <circle cx="80" cy="80" r={radius} stroke="#151515" strokeWidth="12" fill="transparent" />
-                      <circle cx="80" cy="80" r={radius} stroke="#ca8a04" strokeWidth="12" fill="transparent" strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round" className="transition-all duration-1000 ease-out" />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl font-black text-white">{percentage}%</span></div>
-                  </div>
-                  <p className="text-xl font-bold mb-2">Score: {score} / {questions.length}</p>
-                  <p className="text-slate-500 mb-6 italic">"{res.verse}"</p>
-                  <input placeholder="Enter your name" className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" onChange={(e) => setName(e.target.value)} />
-                  <button onClick={saveScore} disabled={saving} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">{saving ? 'SAVING...' : 'SAVE SCORE'}</button>
-                </>
-              );
-            })()}
+          <div className="space-y-6">
+            <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
+              <h2 className="text-3xl font-black text-yellow-500 mb-6">Quiz Finished!</h2>
+              <p className="text-xl font-bold mb-6">Score: {score} / {questions.length}</p>
+              <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
+              <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
+            </div>
+            
+            {/* Correction Section */}
+            <h3 className="text-xl font-bold mt-10">Level {selection.level} Correction</h3>
+            {attempts.map((a, i) => (
+              <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800 mb-4">
+                <p className="font-bold mb-4">{i+1}. {a.question}</p>
+                <div className="grid gap-2 text-sm">
+                  <p className={a.selected === a.correct ? "text-green-400" : "text-red-400"}>
+                    Your answer: {a.options[a.selected]} {a.selected === a.correct ? '(Correct)' : '(Wrong)'}
+                  </p>
+                  {a.selected !== a.correct && <p className="text-green-400">Correct answer: {a.options[a.correct]}</p>}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </main>
