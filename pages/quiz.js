@@ -8,9 +8,9 @@ export default function QuizPage() {
   const [current, setCurrent] = useState(0);
   const [score, setScore] = useState(0);
   const [answered, setAnswered] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null); // Track user's specific choice
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
-  // NEW: Track user attempts for the summary
   const [attempts, setAttempts] = useState([]);
 
   const books = {
@@ -32,6 +32,7 @@ export default function QuizPage() {
   function handleAnswer(index) {
     if (answered) return;
     setAnswered(true);
+    setSelectedOption(index);
     const isCorrect = index === questions[current].answer;
     if (isCorrect) setScore(s => s + 1);
     setAttempts([...attempts, { question: questions[current].question, options: questions[current].options, selected: index, correct: questions[current].answer }]);
@@ -77,14 +78,26 @@ export default function QuizPage() {
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <h2 className="text-xl font-bold mb-6">{questions[current].question}</h2>
             <div className="grid gap-3">
-              {questions[current].options.map((opt, i) => (
-                <button key={i} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border ${answered && i === questions[current].answer ? 'bg-green-600/20 border-green-500' : answered && i !== questions[current].answer ? 'opacity-50 border-slate-800' : 'bg-[#151515] border-slate-800'}`}>
-                  {opt}
-                </button>
-              ))}
+              {questions[current].options.map((opt, i) => {
+                let color = "bg-[#151515] border-slate-800";
+                if (answered) {
+                  if (i === questions[current].answer) color = "bg-green-600/20 border-green-500";
+                  else if (i === selectedOption) color = "bg-red-600/20 border-red-500";
+                }
+                return (
+                  <button key={i} disabled={answered} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border text-left ${color}`}>
+                    {opt}
+                  </button>
+                );
+              })}
             </div>
             {answered && (
-              <button className="mt-6 w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); } else { setQuizState('finished'); } }}>Next</button>
+              <div className="mt-6 p-4 rounded-xl bg-[#151515] border border-slate-800 text-center">
+                <p className="font-bold mb-4">{selectedOption === questions[current].answer ? "Correct!" : "Wrong!"}</p>
+                <button className="w-full bg-yellow-600 py-3 rounded-xl font-bold" onClick={() => { if(current + 1 < questions.length) { setCurrent(current + 1); setAnswered(false); setSelectedOption(null); } else { setQuizState('finished'); } }}>
+                  {current + 1 < questions.length ? 'Next' : 'Finish'}
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -96,18 +109,14 @@ export default function QuizPage() {
               <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-white text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
               <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold">SAVE SCORE</button>
             </div>
-            
-            {/* Correction Section */}
             <h3 className="text-xl font-bold mt-10">Level {selection.level} Correction</h3>
             {attempts.map((a, i) => (
               <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800 mb-4">
                 <p className="font-bold mb-4">{i+1}. {a.question}</p>
-                <div className="grid gap-2 text-sm">
-                  <p className={a.selected === a.correct ? "text-green-400" : "text-red-400"}>
-                    Your answer: {a.options[a.selected]} {a.selected === a.correct ? '(Correct)' : '(Wrong)'}
-                  </p>
-                  {a.selected !== a.correct && <p className="text-green-400">Correct answer: {a.options[a.correct]}</p>}
-                </div>
+                <p className={a.selected === a.correct ? "text-green-400" : "text-red-400"}>
+                  Your answer: {a.options[a.selected]} {a.selected === a.correct ? '(Correct)' : '(Wrong)'}
+                </p>
+                {a.selected !== a.correct && <p className="text-green-400">Correct answer: {a.options[a.correct]}</p>}
               </div>
             ))}
           </div>
