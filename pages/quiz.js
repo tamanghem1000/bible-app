@@ -27,6 +27,11 @@ export default function QuizPage() {
     }
   };
 
+  const books = {
+    "Old Testament": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth", "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi"],
+    "New Testament": ["Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"]
+  };
+
   const getResults = (percentage) => {
     if (percentage >= 90) return { title: "Scripture Master", verse: "His lord said unto him, Well done, good and faithful servant. — Matthew 25:21" };
     if (percentage >= 70) return { title: "Bible Scholar", verse: "Thy word is a lamp unto my feet, and a light unto my path. — Psalm 119:105" };
@@ -45,26 +50,6 @@ export default function QuizPage() {
     } catch (err) { console.error(err); }
   }
 
-  function handleAnswer(index) {
-    if (answered) return;
-    setAnswered(true);
-    setSelectedOption(index);
-    const isCorrect = index === questions[current].answer;
-    if (isCorrect) setScore(s => s + 1);
-    setAttempts([...attempts, { question: questions[current].question, options: questions[current].options, selected: index, correct: questions[current].answer }]);
-  }
-
-  async function saveScore() {
-    if (!name.trim()) return alert("Enter name!");
-    setSaving(true);
-    unlockNextLevel(selection.level);
-    try {
-      const res = await fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim(), score: score, total: questions.length }) });
-      if (res.ok) { window.location.href = '/leaderboard'; }
-      else { throw new Error("Failed"); }
-    } catch (err) { alert(err.message); setSaving(false); }
-  }
-
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200">
       <Navbar />
@@ -73,13 +58,22 @@ export default function QuizPage() {
           <div className="grid gap-4">
             <h1 className="text-2xl font-bold mb-4">Select Category</h1>
             {['Old Testament', 'New Testament', 'General'].map(cat => (
-              <button key={cat} onClick={() => { setSelection({...selection, category: cat}); setQuizState(cat === 'General' ? 'level' : 'book'); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600">{cat}</button>
+              <button key={cat} onClick={() => { setSelection({category: cat, book: '', level: ''}); setQuizState(cat === 'General' ? 'level' : 'book'); }} className="p-6 bg-[#151515] border border-slate-800 rounded-2xl hover:border-yellow-600">{cat}</button>
             ))}
           </div>
         )}
+        
+        {quizState === 'book' && selection.category !== 'General' && (
+          <div className="grid grid-cols-2 gap-2 h-96 overflow-y-auto p-2">
+            {books[selection.category]?.map(b => (
+              <button key={b} onClick={() => { setSelection({...selection, book: b}); setQuizState('level'); }} className="p-3 bg-[#151515] border border-slate-800 rounded-lg text-xs hover:border-yellow-600">{b}</button>
+            ))}
+          </div>
+        )}
+
         {quizState === 'level' && (
           <div className="grid gap-4">
-            <div className="bg-yellow-600/10 border border-yellow-600/50 p-4 rounded-xl text-yellow-500 text-sm text-center">Score 7+ correct to unlock the next level!</div>
+            <div className="bg-yellow-600/10 border border-yellow-600/50 p-4 rounded-xl text-yellow-500 text-sm text-center">Score 7+ correct to unlock next level!</div>
             <div className="grid grid-cols-2 gap-4">
               {[...Array(10)].map((_, i) => {
                 const level = i + 1;
@@ -93,6 +87,7 @@ export default function QuizPage() {
             </div>
           </div>
         )}
+
         {quizState === 'playing' && questions[current] && (
           <div className="bg-[#0c0c0c] p-8 rounded-3xl border border-slate-800">
             <div className="text-xs text-slate-500 mb-4 uppercase">Question {current + 1} of {questions.length}</div>
@@ -105,7 +100,7 @@ export default function QuizPage() {
                   else if (i === selectedOption) color = "bg-red-600/20 border-red-500";
                 }
                 return (
-                  <button key={i} disabled={answered} onClick={() => handleAnswer(i)} className={`p-4 rounded-xl border text-left ${color}`}>{opt}</button>
+                  <button key={i} disabled={answered} onClick={() => { setAnswered(true); setSelectedOption(i); if(i === questions[current].answer) setScore(s => s + 1); setAttempts([...attempts, { question: questions[current].question, options: questions[current].options, selected: i, correct: questions[current].answer }]); }} className={`p-4 rounded-xl border text-left ${color}`}>{opt}</button>
                 );
               })}
             </div>
@@ -116,6 +111,7 @@ export default function QuizPage() {
             )}
           </div>
         )}
+
         {quizState === 'finished' && (
           <div className="space-y-6">
             <div className="bg-[#0c0c0c] p-10 rounded-3xl text-center border border-slate-800">
@@ -133,21 +129,12 @@ export default function QuizPage() {
                     </div>
                     <p className="italic text-slate-400 mb-6">"{res.verse}"</p>
                     <input className="w-full p-4 bg-[#151515] border border-slate-800 rounded-xl mb-4 text-center" placeholder="Enter name" onChange={(e) => setName(e.target.value)} />
-                    <button onClick={saveScore} className="w-full bg-yellow-600 py-4 rounded-xl font-bold mb-4">SAVE SCORE</button>
-                    {score >= 7 && selection.level < 10 && (
-                      <button onClick={() => { setSelection({...selection, level: selection.level + 1}); startQuiz(selection.level + 1, selection.book || 'General'); }} className="w-full bg-green-600 py-4 rounded-xl font-bold">NEXT LEVEL</button>
-                    )}
+                    <button onClick={async () => { unlockNextLevel(selection.level); const res = await fetch('/api/leaderboard', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, score, total: questions.length }) }); if(res.ok) window.location.href = '/leaderboard'; }} className="w-full bg-yellow-600 py-4 rounded-xl font-bold mb-4">SAVE SCORE</button>
+                    {score >= 7 && selection.level < 10 && <button onClick={() => { setSelection({...selection, level: selection.level + 1}); startQuiz(selection.level + 1, selection.book || 'General'); }} className="w-full bg-green-600 py-4 rounded-xl font-bold">NEXT LEVEL</button>}
                   </>
                 );
               })()}
             </div>
-            {attempts.map((a, i) => (
-              <div key={i} className="bg-[#0c0c0c] p-6 rounded-2xl border border-slate-800">
-                <p className="font-bold mb-2">{i+1}. {a.question}</p>
-                <p className={a.selected === a.correct ? "text-green-400" : "text-red-400"}>{a.selected === a.correct ? "✓ Correct: " : "✗ Your Answer: "} {a.options[a.selected]}</p>
-                {a.selected !== a.correct && <p className="text-green-400">✓ Correct Answer: {a.options[a.correct]}</p>}
-              </div>
-            ))}
           </div>
         )}
       </main>
